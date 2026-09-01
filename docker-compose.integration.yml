@@ -1,0 +1,68 @@
+services:
+  db:
+    image: mariadb:lts@sha256:dd9b303aed4f4890ed09f766d8ca9ddfd176c0c6f6267feff53b3192ec65a979
+    environment:
+      MARIADB_DATABASE: wordpress
+      MARIADB_USER: wordpress
+      MARIADB_PASSWORD: wordpress
+      MARIADB_ROOT_PASSWORD: root
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+    volumes:
+      - integration_db:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest@sha256:5a93c470ae8220fddf71f6ebe3bc94e615ddc2ae4d9810f795b830fb11c41a17
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+      WORDPRESS_CONFIG_EXTRA: define('WP_ENVIRONMENT_TYPE', 'local');
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          php -r 'exit(@file_get_contents("http://localhost/wp-admin/install.php") === false ? 1 : 0);'
+      interval: 3s
+      timeout: 5s
+      retries: 40
+    volumes:
+      - integration_wordpress:/var/www/html
+
+  wpcli:
+    image: wordpress:cli@sha256:2b5e9d4d3e51909dca1aaa4732e9f5e5bf0377c2114dbd8ff39f060bff202586
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    environment:
+      WORDPRESS_DB_HOST: db
+      WORDPRESS_DB_USER: wordpress
+      WORDPRESS_DB_PASSWORD: wordpress
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - integration_wordpress:/var/www/html
+
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    depends_on:
+      wordpress:
+        condition: service_healthy
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+    user: "${DOCKER_UID:-0}:${DOCKER_GID:-0}"
+
+volumes:
+  integration_db:
+  integration_wordpress:

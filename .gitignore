@@ -1,0 +1,15 @@
+/vendor/
+/build/
+/coverage/
+/coverage.xml
+/.phpunit.cache/
+/.phpunit.result.cache
+/.php-cs-fixer.cache
+/.cache/
+/.env
+/.env.*
+!/.env.example
+/*.log
+/*.tar.gz
+/*.zip
+.DS_Store

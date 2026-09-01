@@ -5,29 +5,49 @@ set -eu
 compose='tools/ci/docker-compose'
 
 consumer_dir="$(mktemp -d /tmp/wordpress-sdk-consumer.XXXXXX)"
+composer_cache_dir="$(mktemp -d /tmp/wordpress-sdk-composer-cache.XXXXXX)"
 
 cleanup() {
     rm -rf "${consumer_dir}"
+    rm -rf "${composer_cache_dir}"
 }
 
 trap cleanup EXIT INT TERM
 
 ${compose} run --rm --no-deps \
     --volume "${consumer_dir}:/consumer" \
+    --volume "${composer_cache_dir}:/consumer-cache" \
+    --env COMPOSER_CACHE_DIR=/consumer-cache \
     --workdir /consumer \
     php composer init --name=jooservices/wordpress-sdk-consumer --no-interaction
 
 ${compose} run --rm --no-deps \
     --volume "${consumer_dir}:/consumer" \
+    --volume "${composer_cache_dir}:/consumer-cache" \
+    --env COMPOSER_CACHE_DIR=/consumer-cache \
     --workdir /consumer \
     php composer config repositories.wordpress-sdk path /app
 
-${compose} run --rm --no-deps \
+attempt=1
+while ! ${compose} run --rm --no-deps \
     --volume "${consumer_dir}:/consumer" \
+    --volume "${composer_cache_dir}:/consumer-cache" \
+    --env COMPOSER_CACHE_DIR=/consumer-cache \
+    --env COMPOSER_MAX_PARALLEL_HTTP=4 \
     --workdir /consumer \
-    php composer require jooservices/wordpress-sdk:@dev --no-interaction --prefer-dist
+    php composer require jooservices/wordpress-sdk:@dev --no-interaction --prefer-dist; do
+    if [ "${attempt}" -ge 3 ]; then
+        echo 'Clean-consumer dependency installation failed after 3 attempts.' >&2
+        exit 1
+    fi
+
+    attempt=$((attempt + 1))
+    echo "Retrying clean-consumer dependency installation (${attempt}/3)..." >&2
+done
 
 ${compose} run --rm --no-deps \
     --volume "${consumer_dir}:/consumer" \
+    --volume "${composer_cache_dir}:/consumer-cache" \
+    --env COMPOSER_CACHE_DIR=/consumer-cache \
     --workdir /consumer \
     php php -r 'require "vendor/autoload.php"; $config = new JOOservices\WordPress\Sdk\Config("https://example.test"); if ($config->baseUrl !== "https://example.test/wp-json/") { throw new RuntimeException("SDK smoke test failed."); }'

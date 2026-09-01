@@ -24,13 +24,13 @@ jobs:
           persist-credentials: false
       - name: Build and install
         run: |
-          make build
+          tools/ci/docker-compose build php
           tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run package gates
         run: |
-          make validate
-          make ci
-          make clean-consumer
+          tools/ci/docker-compose run --rm php composer validate --strict
+          tools/ci/docker-compose run --rm php composer ci
+          tools/test-clean-consumer
 
   integration:
     name: WordPress E2E
@@ -42,4 +42,4 @@ jobs:
         with:
           persist-credentials: false
       - name: Run disposable WordPress integration suite
-        run: make integration
+        run: tools/integration

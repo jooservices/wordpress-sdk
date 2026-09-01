@@ -29,15 +29,15 @@ jobs:
           git merge-base --is-ancestor "${GITHUB_SHA}" origin/master
       - name: Build and install
         run: |
-          make build
+          tools/ci/docker-compose build php
           tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run package gates
         run: |
-          make validate
-          make ci
-          make clean-consumer
+          tools/ci/docker-compose run --rm php composer validate --strict
+          tools/ci/docker-compose run --rm php composer ci
+          tools/test-clean-consumer
       - name: Run WordPress E2E
-        run: make integration
+        run: tools/integration
       - name: Scan release filesystem
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         env:

@@ -36,7 +36,7 @@ jobs:
         if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Validate Composer metadata
-        run: make validate
+        run: tools/ci/docker-compose run --rm php composer validate --strict
 
   lint:
     name: Lint (${{ matrix.name }})
@@ -94,7 +94,7 @@ jobs:
         if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run unit tests and enforce coverage
-        run: make test-coverage
+        run: tools/ci/docker-compose run --rm php composer test:coverage
 
   consumer:
     name: Clean consumer
@@ -109,7 +109,7 @@ jobs:
       - name: Build PHP image
         run: tools/ci/docker-compose build php
       - name: Verify clean consumer install
-        run: make clean-consumer
+        run: tools/test-clean-consumer
 
   integration:
     name: WordPress E2E
@@ -122,7 +122,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Run disposable WordPress integration suite
-        run: make integration
+        run: tools/integration
 
   security:
     name: Security (${{ matrix.name }})
@@ -144,7 +144,7 @@ jobs:
         run: tools/ci/docker-compose build php
       - name: Audit locked Composer dependencies
         if: matrix.name == 'Dependencies'
-        run: make audit
+        run: tools/ci/docker-compose run --rm php composer audit --locked
       - name: Review dependency changes
         if: matrix.name == 'Dependencies'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0

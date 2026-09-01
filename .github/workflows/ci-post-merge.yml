@@ -41,5 +41,9 @@ jobs:
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Build PHP image
+        run: tools/ci/docker-compose build php
+      - name: Install dependencies
+        run: tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run disposable WordPress integration suite
         run: tools/integration

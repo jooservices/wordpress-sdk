@@ -1,0 +1,16 @@
+services:
+  php:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: jooservices/wordpress-sdk:php85
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      COMPOSER_CACHE_DIR: /tmp/composer-cache
+      GIT_CONFIG_COUNT: "1"
+      GIT_CONFIG_KEY_0: safe.directory
+      GIT_CONFIG_VALUE_0: /app
+    user: "${DOCKER_UID:-0}:${DOCKER_GID:-0}"
+    tty: true

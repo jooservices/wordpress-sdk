@@ -1,0 +1,33 @@
+#!/bin/sh
+
+set -eu
+
+export DOCKER_UID="${DOCKER_UID:-$(id -u)}"
+export DOCKER_GID="${DOCKER_GID:-$(id -g)}"
+
+integration_project='wordpress-sdk-integration'
+integration_compose="docker compose --project-name ${integration_project} --file docker-compose.integration.yml"
+
+cleanup() {
+    ${integration_compose} down --volumes --remove-orphans
+}
+
+trap cleanup EXIT INT TERM
+
+${integration_compose} up --detach --build db wordpress
+${integration_compose} run --rm wpcli wp core install \
+    --url=http://wordpress \
+    --title='WordPress SDK Integration' \
+    --admin_user=admin \
+    --admin_password='integration-admin-password' \
+    --admin_email=admin@example.test \
+    --skip-email \
+    --allow-root
+
+integration_password="$(${integration_compose} run --rm wpcli wp user application-password create admin wordpress-sdk --porcelain --allow-root)"
+
+${integration_compose} run --rm \
+    --env WORDPRESS_URL=http://wordpress \
+    --env WORDPRESS_USER=admin \
+    --env WORDPRESS_APP_PASSWORD="${integration_password}" \
+    php composer test:integration

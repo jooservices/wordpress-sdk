@@ -13,6 +13,7 @@ final class Status extends Dto
 {
     public function __construct(
         public readonly string $name = '',
+        public readonly string $slug = '',
         public readonly bool $public = false,
         public readonly bool $protected = false,
         public readonly bool $private = false,

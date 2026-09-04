@@ -57,6 +57,21 @@ final class BlockParserTest extends TestCase
         self::assertSame([], $blocks[0]->attributes);
     }
 
+    public function testParsesParagraphPreservesInlineMarkup(): void
+    {
+        $blocks = $this->parser->parse(
+            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            $this->registry,
+        );
+
+        self::assertInstanceOf(Paragraph::class, $blocks[0]);
+        self::assertSame('Hello <strong>world</strong> and <em>friends</em>', $blocks[0]->text);
+        self::assertSame(
+            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            $blocks[0]->render(),
+        );
+    }
+
     public function testParsesHeadingWithLevel(): void
     {
         $blocks = $this->parser->parse(

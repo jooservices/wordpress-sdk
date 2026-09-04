@@ -146,6 +146,20 @@ final class CoreApiServicesTest extends TestCase
         self::assertSame(['id' => 4], $fonts->face(1, 4));
         $this->respond('POST', 'wp/v2/font-families/1/font-faces', ['id' => 5]);
         self::assertSame(['id' => 5], $fonts->createFace(1, ['font_weight' => '400']));
+
+        $file = tempnam(sys_get_temp_dir(), 'sdk-font');
+        self::assertNotFalse($file);
+        file_put_contents($file, 'font-bytes');
+        try {
+            $this->respond('POST', 'wp/v2/font-families/1/font-faces', ['id' => 6]);
+            self::assertSame(['id' => 6], $fonts->uploadFace(1, $file, ['font_weight' => '700']));
+            $request = $this->lastRequest();
+            self::assertInstanceOf(\JOOservices\Client\Request\MultipartStream::class, $request->getBody());
+            self::assertStringStartsWith('multipart/form-data; boundary=', $request->getHeaderLine('Content-Type'));
+        } finally {
+            unlink($file);
+        }
+
         $this->respond('POST', 'wp/v2/font-families/1/font-faces/5', ['id' => 5]);
         self::assertSame(['id' => 5], $fonts->updateFace(1, 5, ['font_style' => 'normal']));
         $this->respond('DELETE', 'wp/v2/font-families/1/font-faces/5', ['deleted' => true]);

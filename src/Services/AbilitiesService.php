@@ -42,6 +42,6 @@ final class AbilitiesService extends RawEndpointService
     /** @return array<string, mixed> */
     public function category(string $slug): array
     {
-        return $this->getRaw(Endpoint::ABILITY_CATEGORIES->withKey($this->segment($slug)));
+        return $this->getRaw(Endpoint::ABILITY_CATEGORIES->withKey($slug));
     }
 }

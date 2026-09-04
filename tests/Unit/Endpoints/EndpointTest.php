@@ -25,6 +25,8 @@ final class EndpointTest extends TestCase
     public function testWithKey(): void
     {
         self::assertSame('wp/v2/taxonomies/category', Endpoint::TAXONOMIES->withKey('category'));
+        self::assertSame('wp/v2/themes/theme%2Fchild', Endpoint::THEMES->withKey('theme/child'));
+        self::assertSame('wp/v2/statuses/a%20b', Endpoint::STATUSES->withKey('a b'));
     }
 
     public function testWithValuesEncodesSegments(): void

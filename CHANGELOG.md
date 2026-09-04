@@ -16,6 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Tighten `CoreRouteSupport` to SDK-covered route patterns (unknown subroutes
   under known resources fail the gate).
 - Declare `nyholm/psr7` as a direct runtime dependency for `Psr17Factory`.
+- Allow `Post::$featured_media` to be `null` (WordPress omits featured images).
+- Hydrate edit-context `User` fields and `Status::$slug` without cast failures.
+- Map HTTP 409 to `ConflictException`; keep the full WordPress payload on
+  `ValidationException` (not only the `params` map).
+- Percent-encode string path keys via `Endpoint::withKey()` /
+  `AbstractStringKeyService::get()`.
+- Preserve inline HTML when parsing Gutenberg leaves (`BlockParser` no longer
+  `strip_tags()` rich text).
+
+### Added
+
+- `FontsService::uploadFace()` for multipart font-face uploads (JSON
+  `createFace()` unchanged).
 
 ### Changed
 

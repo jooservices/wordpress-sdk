@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Services;
 
+use InvalidArgumentException;
+use JOOservices\Client\Request\MultipartPart;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 
 /** Font families, nested font faces, and installable font collections. */
@@ -17,11 +19,13 @@ final class FontsService extends RawEndpointService
     {
         return $this->getRaw(Endpoint::FONT_FAMILIES->path(), $query);
     }
+
     /** @return array<string, mixed> */
     public function family(int $id): array
     {
         return $this->getRaw(Endpoint::FONT_FAMILIES->withId($id));
     }
+
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -30,6 +34,7 @@ final class FontsService extends RawEndpointService
     {
         return $this->postRaw(Endpoint::FONT_FAMILIES->path(), $payload);
     }
+
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -38,22 +43,28 @@ final class FontsService extends RawEndpointService
     {
         return $this->postRaw(Endpoint::FONT_FAMILIES->withId($id), $payload);
     }
+
     /** @return array<string, mixed> */
     public function deleteFamily(int $id, bool $force = true): array
     {
         return $this->deleteRaw(Endpoint::FONT_FAMILIES->withId($id), $force ? ['force' => 'true'] : []);
     }
+
     /** @return array<string, mixed> */
     public function faces(int $familyId): array
     {
         return $this->getRaw($this->facesPath($familyId));
     }
+
     /** @return array<string, mixed> */
     public function face(int $familyId, int $id): array
     {
         return $this->getRaw($this->facesPath($familyId) . '/' . $id);
     }
+
     /**
+     * Creates a font face from a JSON/body payload (no binary file).
+     *
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
      */
@@ -61,6 +72,39 @@ final class FontsService extends RawEndpointService
     {
         return $this->postRaw($this->facesPath($familyId), $payload);
     }
+
+    /**
+     * Uploads a font file as a new face under a family (multipart/form-data).
+     *
+     * @param array<string, mixed> $attributes scalar face fields (font_family_settings
+     *                                         JSON string, font_weight, font_style, …)
+     * @return array<string, mixed>
+     */
+    public function uploadFace(int $familyId, string $filePath, array $attributes = []): array
+    {
+        if (! is_file($filePath) || ! is_readable($filePath)) {
+            throw new InvalidArgumentException(sprintf('File not found or not readable: %s', $filePath));
+        }
+
+        $stream = fopen($filePath, 'rb');
+        if ($stream === false) {
+            throw new InvalidArgumentException(sprintf('File could not be opened: %s', $filePath));
+        }
+
+        $parts = [new MultipartPart('file', $stream, filename: basename($filePath))];
+        foreach ($attributes as $key => $value) {
+            if (is_scalar($value)) {
+                $parts[] = new MultipartPart((string) $key, (string) $value);
+            }
+        }
+
+        try {
+            return $this->requestArray('POST', $this->facesPath($familyId), ['multipart' => $parts]);
+        } finally {
+            fclose($stream);
+        }
+    }
+
     /**
      * @param array<string, mixed> $payload
      * @return array<string, mixed>
@@ -69,20 +113,23 @@ final class FontsService extends RawEndpointService
     {
         return $this->postRaw($this->facesPath($familyId) . '/' . $id, $payload);
     }
+
     /** @return array<string, mixed> */
     public function deleteFace(int $familyId, int $id, bool $force = true): array
     {
         return $this->deleteRaw($this->facesPath($familyId) . '/' . $id, $force ? ['force' => 'true'] : []);
     }
+
     /** @return array<string, mixed> */
     public function collections(): array
     {
         return $this->getRaw(Endpoint::FONT_COLLECTIONS->path());
     }
+
     /** @return array<string, mixed> */
     public function collection(string $slug): array
     {
-        return $this->getRaw(Endpoint::FONT_COLLECTIONS->withKey($this->segment($slug)));
+        return $this->getRaw(Endpoint::FONT_COLLECTIONS->withKey($slug));
     }
 
     private function facesPath(int $familyId): string

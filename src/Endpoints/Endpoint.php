@@ -85,7 +85,7 @@ enum Endpoint: string
 
     public function withKey(string $key): string
     {
-        return $this->value . '/' . $key;
+        return $this->value . '/' . rawurlencode($key);
     }
 
     /**

@@ -12,7 +12,7 @@ final class IconsService extends RawEndpointService
     /** @return array<string, mixed> */
     public function list(?string $collection = null): array
     {
-        return $this->getRaw($collection === null ? Endpoint::ICONS->path() : Endpoint::ICONS->withKey($this->segment($collection)));
+        return $this->getRaw($collection === null ? Endpoint::ICONS->path() : Endpoint::ICONS->withKey($collection));
     }
     /** @return array<string, mixed> */
     public function get(string $collection, string $name): array
@@ -27,6 +27,6 @@ final class IconsService extends RawEndpointService
     /** @return array<string, mixed> */
     public function collection(string $slug): array
     {
-        return $this->getRaw(Endpoint::ICON_COLLECTIONS->withKey($this->segment($slug)));
+        return $this->getRaw(Endpoint::ICON_COLLECTIONS->withKey($slug));
     }
 }

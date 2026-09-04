@@ -52,6 +52,7 @@ final class DataModelsTest extends TestCase
         $post = Post::from($payload);
 
         self::assertSame(42, $post->id);
+        self::assertSame(7, $post->featured_media);
         self::assertSame('Hello World', $post->title?->rendered);
         self::assertSame('Hello World', $post->title->raw);
         self::assertSame('<p>Content</p>', $post->content?->rendered);
@@ -69,10 +70,18 @@ final class DataModelsTest extends TestCase
         $post = new Post();
 
         self::assertSame(0, $post->id);
+        self::assertNull($post->featured_media);
         self::assertSame('', $post->slug);
         self::assertNull($post->title);
         self::assertSame([], $post->categories);
         self::assertFalse($post->sticky);
+    }
+
+    public function testPostAcceptsNullFeaturedMedia(): void
+    {
+        $post = Post::from(['id' => 1, 'featured_media' => null]);
+
+        self::assertNull($post->featured_media);
     }
 
     public function testPostIgnoresUnknownKeys(): void
@@ -152,6 +161,31 @@ final class DataModelsTest extends TestCase
         self::assertSame(['96' => 'https://example.com/avatar.png'], $user->avatar_urls);
     }
 
+    public function testUserHydratesEditContextFields(): void
+    {
+        $user = User::from([
+            'id' => 2,
+            'name' => 'Editor',
+            'slug' => 'editor',
+            'email' => 'editor@example.test',
+            'first_name' => 'Ed',
+            'last_name' => 'Itor',
+            'nickname' => 'ed',
+            'locale' => 'en_US',
+            'registered_date' => '2026-01-01T00:00:00',
+            'roles' => ['editor'],
+            'capabilities' => ['edit_posts' => true],
+            'extra_capabilities' => ['administrator' => false],
+        ]);
+
+        self::assertSame('editor@example.test', $user->email);
+        self::assertSame('Ed', $user->first_name);
+        self::assertSame('Itor', $user->last_name);
+        self::assertSame(['editor'], $user->roles);
+        self::assertSame(['edit_posts' => true], $user->capabilities);
+        self::assertSame(['administrator' => false], $user->extra_capabilities);
+    }
+
     public function testUserWithoutUsername(): void
     {
         $user = User::from(['id' => 1, 'slug' => 'admin']);
@@ -214,12 +248,14 @@ final class DataModelsTest extends TestCase
     {
         $status = Status::from([
             'name' => 'Publish',
+            'slug' => 'publish',
             'public' => true,
             'queryable' => true,
             'show_in_list' => true,
         ]);
 
         self::assertSame('Publish', $status->name);
+        self::assertSame('publish', $status->slug);
         self::assertTrue($status->public);
         self::assertFalse($status->protected);
     }

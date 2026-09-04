@@ -6,6 +6,7 @@ namespace JOOservices\WordPress\Sdk\Tests\Unit\Http;
 
 use JOOservices\Client\Testing\TestResponse;
 use JOOservices\WordPress\Sdk\Exceptions\BadRequestException;
+use JOOservices\WordPress\Sdk\Exceptions\ConflictException;
 use JOOservices\WordPress\Sdk\Exceptions\ForbiddenException;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
 use JOOservices\WordPress\Sdk\Exceptions\RateLimitException;
@@ -32,6 +33,7 @@ final class ErrorMapperTest extends TestCase
         self::assertInstanceOf(UnauthorizedException::class, $this->map(401));
         self::assertInstanceOf(ForbiddenException::class, $this->map(403));
         self::assertInstanceOf(NotFoundException::class, $this->map(404));
+        self::assertInstanceOf(ConflictException::class, $this->map(409));
         self::assertInstanceOf(ValidationException::class, $this->map(422));
         self::assertInstanceOf(RateLimitException::class, $this->map(429));
         self::assertInstanceOf(ServerException::class, $this->map(500));
@@ -78,21 +80,29 @@ final class ErrorMapperTest extends TestCase
         self::assertInstanceOf(ValidationException::class, $exception);
         self::assertSame(['title' => 'Cannot be empty.'], $exception->params);
         self::assertSame(400, $exception->getCode());
+        self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
+        self::assertSame(
+            ['status' => 400, 'params' => ['title' => 'Cannot be empty.']],
+            $exception->data['data'] ?? null,
+        );
     }
 
     public function testValidationExceptionCarriesParams(): void
     {
-        $exception = $this->mapper->map(TestResponse::make(422, [], json_encode([
+        $payload = [
             'code' => 'rest_invalid_param',
             'message' => 'Invalid parameter(s)',
             'data' => [
                 'status' => 422,
                 'params' => ['slug' => 'Invalid slug.'],
+                'details' => ['slug' => ['code' => 'rest_invalid_param']],
             ],
-        ], JSON_THROW_ON_ERROR)));
+        ];
+        $exception = $this->mapper->map(TestResponse::make(422, [], json_encode($payload, JSON_THROW_ON_ERROR)));
 
         self::assertInstanceOf(ValidationException::class, $exception);
         self::assertSame(['slug' => 'Invalid slug.'], $exception->params);
+        self::assertSame($payload, $exception->data);
     }
 
     public function testValidationWithoutParamsMap(): void

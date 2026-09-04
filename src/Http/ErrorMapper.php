@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\WordPress\Sdk\Http;
 
 use JOOservices\WordPress\Sdk\Exceptions\BadRequestException;
+use JOOservices\WordPress\Sdk\Exceptions\ConflictException;
 use JOOservices\WordPress\Sdk\Exceptions\ForbiddenException;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
 use JOOservices\WordPress\Sdk\Exceptions\RateLimitException;
@@ -33,10 +34,12 @@ final class ErrorMapper
             $statusCode === 401 => new UnauthorizedException($message, 401, $data),
             $statusCode === 403 => new ForbiddenException($message, 403, $data),
             $statusCode === 404 => new NotFoundException($message, 404, $data),
+            $statusCode === 409 => new ConflictException($message, 409, $data),
             $statusCode === 422 => new ValidationException(
                 $this->validationParams($data),
                 $message,
                 422,
+                $data,
             ),
             $statusCode === 429 => new RateLimitException($message, 429, $data),
             $statusCode >= 500 => new ServerException($message, $statusCode, $data),
@@ -50,7 +53,7 @@ final class ErrorMapper
     private function handleBadRequest(array $data, string $message): WordPressApiException
     {
         if (($data['code'] ?? null) === 'rest_invalid_param') {
-            return new ValidationException($this->validationParams($data), $message, 400);
+            return new ValidationException($this->validationParams($data), $message, 400, $data);
         }
 
         return new BadRequestException($message, 400, $data);

@@ -6,6 +6,7 @@ namespace JOOservices\WordPress\Sdk\Tests\Unit\Exceptions;
 
 use JOOservices\Exceptions\Contracts\JOOExceptionInterface;
 use JOOservices\WordPress\Sdk\Exceptions\BadRequestException;
+use JOOservices\WordPress\Sdk\Exceptions\ConflictException;
 use JOOservices\WordPress\Sdk\Exceptions\ForbiddenException;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
 use JOOservices\WordPress\Sdk\Exceptions\RateLimitException;
@@ -38,6 +39,7 @@ final class ExceptionsTest extends TestCase
             UnauthorizedException::class => [401, 'wordpress.http.unauthorized'],
             ForbiddenException::class => [403, 'wordpress.http.forbidden'],
             NotFoundException::class => [404, 'wordpress.http.notfound'],
+            ConflictException::class => [409, 'wordpress.http.conflict'],
             RateLimitException::class => [429, 'wordpress.http.ratelimit'],
             ServerException::class => [500, 'wordpress.http.servererror'],
         ];
@@ -59,6 +61,23 @@ final class ExceptionsTest extends TestCase
         self::assertSame(422, $exception->getCode());
         self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
         self::assertSame('wordpress.http.validation', $exception->errorCode());
+    }
+
+    public function testValidationExceptionPreservesFullPayloadWhenProvided(): void
+    {
+        $payload = [
+            'code' => 'rest_invalid_param',
+            'message' => 'Invalid parameter(s)',
+            'data' => [
+                'status' => 422,
+                'params' => ['title' => 'Required'],
+                'details' => ['title' => ['code' => 'rest_missing_callback_param']],
+            ],
+        ];
+        $exception = new ValidationException(['title' => 'Required'], 'Invalid parameter(s)', 422, $payload);
+
+        self::assertSame($payload, $exception->data);
+        self::assertSame(['title' => 'Required'], $exception->params);
     }
 
     public function testWithContextPreservesPayload(): void

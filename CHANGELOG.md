@@ -7,45 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-
-- Treat `Endpoint` as the REST path SSOT (editor / oEmbed / site-health leaves,
-  `withChild()` for nested subresources).
-- Hydrate `Settings` through `jooservices/dto` `from()` instead of `new Settings()`.
-- Align revisions and autosaves on a shared `PostBackedResources` allowlist.
-- Tighten `CoreRouteSupport` to SDK-covered route patterns (unknown subroutes
-  under known resources fail the gate).
-- Declare `nyholm/psr7` as a direct runtime dependency for `Psr17Factory`.
-- Allow `Post::$featured_media` to be `null` (WordPress omits featured images).
-- Hydrate edit-context `User` fields and `Status::$slug` without cast failures.
-- Map HTTP 409 to `ConflictException`; keep the full WordPress payload on
-  `ValidationException` (not only the `params` map).
-- Percent-encode string path keys via `Endpoint::withKey()` /
-  `AbstractStringKeyService::get()`.
-- Preserve inline HTML when parsing Gutenberg leaves (`BlockParser` no longer
-  `strip_tags()` rich text).
-- Append `Status::$slug` after existing constructor parameters to keep
-  positional callers compatible.
-- Keep `ValidationException` positional args (`$previous`, `$context`) stable;
-  pass full payloads via named `data:`.
-- Default `ValidationException` payload when a 422 body is empty/`{}`.
-- Send WordPress `font_face_settings` JSON (with `src: ["file"]`) from
-  `FontsService::uploadFace()`.
-- Render multi-paragraph quotes as separate `<p>` elements.
-
-### Added
-
-- `FontsService::uploadFace()` for multipart font-face uploads (JSON
-  `createFace()` unchanged).
-
-### Changed
-
-- `WordPressApiException` (and HTTP subclasses) now extend
-  `jooservices/exceptions` `AbstractContextAwareException`, expose stable
-  `errorCode()` values (`wordpress.http.*`), and remain catchable via
-  `JOOExceptionInterface`. Typed REST subclasses are unchanged.
-
-## [4.0.0] - 2026-09-01
+## [4.0.0] - 2026-09-04
 
 ### Added
 
@@ -75,6 +37,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Self-hosted GitHub Actions gates for validation, Pint, PHPStan, unit
   coverage, clean-consumer installation, live WordPress E2E, dependency
   review, Composer audit, Gitleaks, Semgrep, CodeQL, and workflow auditing.
+- `FontsService::uploadFace()` for multipart font-face uploads (JSON
+  `createFace()` unchanged).
 
 ### Changed
 
@@ -97,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   workspace-only repositories from package metadata.
 - Pinned the PHP, Composer, PCOV, WordPress, WP-CLI, and MariaDB container
   inputs; Docker bind mounts run with the invoking runner UID/GID.
+- `WordPressApiException` (and HTTP subclasses) now extend
+  `jooservices/exceptions` `AbstractContextAwareException`, expose stable
+  `errorCode()` values (`wordpress.http.*`), and remain catchable via
+  `JOOExceptionInterface`. Typed REST subclasses are unchanged.
 
 ### Removed
 
@@ -120,6 +88,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Nested same-name Gutenberg block parsing and self-closing attribute parsing.
 - Pagination E2E coverage for non-public post statuses.
+- Treat `Endpoint` as the REST path SSOT (editor / oEmbed / site-health leaves,
+  `withChild()` for nested subresources).
+- Hydrate `Settings` through `jooservices/dto` `from()` instead of `new Settings()`.
+- Align revisions and autosaves on a shared `PostBackedResources` allowlist.
+- Tighten `CoreRouteSupport` to SDK-covered route patterns (unknown subroutes
+  under known resources fail the gate).
+- Declare `nyholm/psr7` as a direct runtime dependency for `Psr17Factory`.
+- Allow `Post::$featured_media` to be `null` (WordPress omits featured images).
+- Hydrate edit-context `User` fields and `Status::$slug` without cast failures.
+- Map HTTP 409 to `ConflictException`; keep the full WordPress payload on
+  `ValidationException` (not only the `params` map).
+- Percent-encode string path keys via `Endpoint::withKey()` /
+  `AbstractStringKeyService::get()`.
+- Preserve inline HTML when parsing Gutenberg leaves (`BlockParser` no longer
+  `strip_tags()` rich text).
+- Append `Status::$slug` after existing constructor parameters to keep
+  positional callers compatible.
+- Keep `ValidationException` positional args (`$previous`, `$context`) stable;
+  pass full payloads via named `data:`.
+- Default `ValidationException` payload when a 422 body is empty/`{}`.
+- Send WordPress `font_face_settings` JSON (with `src: ["file"]`) from
+  `FontsService::uploadFace()`.
+- Render multi-paragraph quotes as separate `<p>` elements.
 
 [Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.0.0...HEAD
 [4.0.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.0.0

@@ -18,7 +18,8 @@ Package: `jooservices/wordpress-sdk` · v4.0.0 (ground-up rebuild)
 composer require jooservices/wordpress-sdk
 ```
 
-Requires PHP `^8.5`, `jooservices/client ^4.2`, `jooservices/dto ^3.2`.
+Requires PHP `^8.5`, `jooservices/client ^4.2`, `jooservices/dto ^3.2`,
+`jooservices/exceptions ^4.0`.
 
 ## Quick start
 
@@ -143,15 +144,18 @@ HTTP errors map to typed exceptions; client-level failures (timeouts, DNS)
 propagate from the transport layer:
 
 ```php
+use JOOservices\Exceptions\Contracts\JOOExceptionInterface;
 use JOOservices\WordPress\Sdk\Exceptions\UnauthorizedException;
 use JOOservices\WordPress\Sdk\Exceptions\WordPressApiException;
 
 try {
     $wordpress->posts()->get(123, ['context' => 'edit']);
 } catch (UnauthorizedException $exception) {
-    // Refresh credentials.
+    // Refresh credentials — keep catching typed REST subclasses.
 } catch (WordPressApiException $exception) {
     $payload = $exception->toArray(); // sanitized, credentials redacted
+} catch (JOOExceptionInterface $exception) {
+    // Optional ecosystem-wide catch across JOOservices packages.
 }
 ```
 

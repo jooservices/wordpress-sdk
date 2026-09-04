@@ -7,7 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-No unreleased changes.
+### Changed
+
+- `WordPressApiException` (and HTTP subclasses) now extend
+  `jooservices/exceptions` `AbstractContextAwareException`, expose stable
+  `errorCode()` values (`wordpress.http.*`), and remain catchable via
+  `JOOExceptionInterface`. Typed REST subclasses are unchanged.
 
 ## [4.0.0] - 2026-09-01
 

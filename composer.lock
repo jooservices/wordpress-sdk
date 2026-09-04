@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "12404ef687761cb3027cac0bcb7e79c6",
+    "content-hash": "469580e48045a59f0db625caffb0e9a7",
     "packages": [
         {
             "name": "jooservices/client",
@@ -132,6 +132,65 @@
                 "source": "https://github.com/jooservices/dto"
             },
             "time": "2026-08-28T20:44:12+00:00"
+        },
+        {
+            "name": "jooservices/exceptions",
+            "version": "v4.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/jooservices/exceptions.git",
+                "reference": "f564eb80632fa9f8159262c084c67237bc8d2b21"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/jooservices/exceptions/zipball/f564eb80632fa9f8159262c084c67237bc8d2b21",
+                "reference": "f564eb80632fa9f8159262c084c67237bc8d2b21",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.5"
+            },
+            "require-dev": {
+                "captainhook/captainhook": "^5.24",
+                "captainhook/plugin-composer": "^5.3",
+                "laravel/pint": "^1.18",
+                "phpmd/phpmd": "^2.15",
+                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^13.0",
+                "squizlabs/php_codesniffer": "^3.13.6 || ^4.0.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "JOOservices\\Exceptions\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Viet Vu",
+                    "email": "jooservices@gmail.com"
+                }
+            ],
+            "description": "Shared exception contracts, context-aware bases, and secret redaction for the JOOservices ecosystem.",
+            "keywords": [
+                "JOOservices",
+                "context-aware",
+                "contracts",
+                "exceptions",
+                "logging",
+                "redaction"
+            ],
+            "support": {
+                "issues": "https://github.com/jooservices/exceptions/issues",
+                "source": "https://github.com/jooservices/exceptions"
+            },
+            "time": "2026-08-30T01:28:14+00:00"
         },
         {
             "name": "nyholm/psr7",

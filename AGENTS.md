@@ -2,7 +2,7 @@
 
 This file adds project-only rules.
 
-- PHP `^8.5`; runtime deps: `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `psr/log ^3.0`
+- PHP `^8.5`; runtime deps: `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0`, `psr/log ^3.0`
 - First public line: **`v4.0.0`** — ground-up rebuild of the archived v1.x SDK
 - All PHP tooling via Docker (`php:8.5-cli-bookworm`), `make <target>` (install/lint/test/ci)
 - Lints at **max**: Pint `per` preset + PHPStan max on `src/` and `tests/` (phpstan-phpunit)

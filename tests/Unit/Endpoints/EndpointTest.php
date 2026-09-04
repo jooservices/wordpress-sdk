@@ -73,5 +73,6 @@ final class EndpointTest extends TestCase
         self::assertSame('wp-block-editor/v1/export', Endpoint::EDITOR_EXPORT->path());
         self::assertSame('wp/v2/view-config', Endpoint::VIEW_CONFIG->path());
         self::assertSame('oembed/1.0/embed', Endpoint::OEMBED_EMBED->path());
+        self::assertSame('oembed/1.0', Endpoint::OEMBED_ROOT->path());
     }
 }

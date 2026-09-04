@@ -62,9 +62,7 @@ final class CoreRouteSupport
 
         foreach (Endpoint::cases() as $endpoint) {
             $patterns[] = '/' . $endpoint->path();
-            // Namespace roots stay exact — a new sibling under the root must
-            // get its own Endpoint case before the gate goes green again.
-            if (str_ends_with($endpoint->name, '_ROOT')) {
+            if (! $this->acceptsItemWildcard($endpoint)) {
                 continue;
             }
 
@@ -107,6 +105,37 @@ final class CoreRouteSupport
         $patterns[] = '/' . Endpoint::PLUGINS->path() . '/*/*';
 
         return array_values(array_unique($patterns));
+    }
+
+    /**
+     * True when the SDK exposes a get-by-id (or equivalent) child under this
+     * collection. Leaf endpoints and namespace roots stay exact-only so an
+     * unknown direct subroute fails the coverage gate.
+     */
+    private function acceptsItemWildcard(Endpoint $endpoint): bool
+    {
+        if (str_ends_with($endpoint->name, '_ROOT')) {
+            return false;
+        }
+
+        return match ($endpoint) {
+            Endpoint::SEARCH,
+            Endpoint::SETTINGS,
+            Endpoint::USERS_ME,
+            Endpoint::BATCH,
+            Endpoint::OEMBED_EMBED,
+            Endpoint::OEMBED_PROXY,
+            Endpoint::VIEW_CONFIG,
+            Endpoint::EDITOR_URL_DETAILS,
+            Endpoint::EDITOR_EXPORT,
+            Endpoint::EDITOR_NAVIGATION_FALLBACK,
+            Endpoint::SITE_HEALTH_DIRECTORY_SIZES,
+            Endpoint::BLOCK_DIRECTORY,
+            Endpoint::PATTERN_DIRECTORY,
+            Endpoint::BLOCK_PATTERNS,
+            Endpoint::BLOCK_PATTERN_CATEGORIES => false,
+            default => true,
+        };
     }
 
     private function normalizeDiscoveryRoute(string $route): string

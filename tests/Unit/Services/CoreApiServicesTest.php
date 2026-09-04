@@ -57,6 +57,24 @@ final class CoreApiServicesTest extends TestCase
             '/wp/v2/global-styles/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)',
         ];
         self::assertSame([], (new CoreRouteSupport())->unsupported($templateRoutes));
+
+        self::assertSame(
+            [
+                '/oembed/1.0/unknown',
+                '/wp/v2/settings/extra',
+                '/wp/v2/view-config/extra',
+            ],
+            (new CoreRouteSupport())->unsupported([
+                '/oembed/1.0',
+                '/oembed/1.0/embed',
+                '/oembed/1.0/proxy',
+                '/oembed/1.0/unknown',
+                '/wp/v2/settings',
+                '/wp/v2/settings/extra',
+                '/wp/v2/view-config',
+                '/wp/v2/view-config/extra',
+            ]),
+        );
     }
 
     public function testRevisionsAndAutosavesShareResourceAllowlist(): void

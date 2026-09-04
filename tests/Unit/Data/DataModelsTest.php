@@ -249,6 +249,14 @@ final class DataModelsTest extends TestCase
         self::assertNull($settings->get('missing'));
     }
 
+    public function testSettingsPreservesArrayValuedSettingNamedValues(): void
+    {
+        $settings = Settings::from(['values' => ['title' => 'My Site']]);
+
+        self::assertSame(['title' => 'My Site'], $settings->get('values'));
+        self::assertSame(['values' => ['title' => 'My Site']], $settings->toArray());
+    }
+
     public function testApplicationPasswordHydrates(): void
     {
         $password = ApplicationPassword::from([

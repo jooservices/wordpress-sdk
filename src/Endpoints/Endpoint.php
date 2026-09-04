@@ -51,7 +51,7 @@ enum Endpoint: string
     case SITE_HEALTH_DIRECTORY_SIZES = 'wp-site-health/v1/directory-sizes';
     case SITE_HEALTH_ROOT = 'wp-site-health/v1';
     case BATCH = 'batch/v1';
-    case OEMBED = 'oembed/1.0';
+    case OEMBED_ROOT = 'oembed/1.0';
     case OEMBED_EMBED = 'oembed/1.0/embed';
     case OEMBED_PROXY = 'oembed/1.0/proxy';
     case PATTERN_CATEGORIES = 'wp/v2/wp_pattern_category';

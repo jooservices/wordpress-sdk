@@ -8,4 +8,4 @@
 - [ ] `make ci`
 - [ ] `make clean-consumer`
 - [ ] `make integration`
-- [ ] Required self-hosted checks are green
+- [ ] CI green on GitHub-hosted ubuntu-latest

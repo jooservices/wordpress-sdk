@@ -16,7 +16,7 @@ permissions:
 jobs:
   validate:
     name: Validate
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
       - name: Checkout
@@ -41,7 +41,7 @@ jobs:
   lint:
     name: Lint (${{ matrix.name }})
     needs: [validate]
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     strategy:
       fail-fast: true
@@ -74,7 +74,7 @@ jobs:
   unit:
     name: Unit coverage
     needs: [lint]
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -99,7 +99,7 @@ jobs:
   consumer:
     name: Clean consumer
     needs: [lint]
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
       - name: Checkout
@@ -114,7 +114,7 @@ jobs:
   integration:
     name: WordPress E2E
     needs: [lint]
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout
@@ -131,7 +131,7 @@ jobs:
   security:
     name: Security (${{ matrix.name }})
     needs: [lint]
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: true

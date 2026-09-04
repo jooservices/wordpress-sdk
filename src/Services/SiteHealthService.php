@@ -61,6 +61,6 @@ final class SiteHealthService extends RawEndpointService
     /** @return array<string, mixed> */
     public function directorySizes(): array
     {
-        return $this->getRaw('wp-site-health/v1/directory-sizes');
+        return $this->getRaw(Endpoint::SITE_HEALTH_DIRECTORY_SIZES->path());
     }
 }

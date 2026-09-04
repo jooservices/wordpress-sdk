@@ -60,12 +60,12 @@ final class ApplicationPasswordsService extends AbstractService
     public function introspect(int|string $userId = 'me'): ApplicationPassword
     {
         /** @var ApplicationPassword */
-        return $this->getItem($this->path($userId) . '/introspect', ApplicationPassword::class);
+        return $this->getItem($this->path($userId, 'introspect'), ApplicationPassword::class);
     }
 
     private function path(int|string $userId, ?string $uuid = null): string
     {
-        $path = Endpoint::USERS->withId($userId) . '/application-passwords';
+        $path = Endpoint::USERS->withChild($userId, 'application-passwords');
 
         return $uuid === null ? $path : $path . '/' . $uuid;
     }

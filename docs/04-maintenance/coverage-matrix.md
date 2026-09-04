@@ -24,10 +24,12 @@
 `block-directory/search`, `menu-locations`, `navigation`, `menus`,
 `menu-items`, `templates`, `template-parts`, `global-styles`, `widgets`,
 `widget-types` (+ `encode`/`render`), `sidebars`, all
-`wp-site-health/v1` tests, revisions and autosaves for every core post-backed
-resource, block/pattern directories, registered patterns/categories, pattern
-category terms, font families/faces/collections, icons/collections, abilities,
-block-editor support routes, view config, batch v1, and oEmbed.
+`wp-site-health/v1` tests, revisions and autosaves for the shared post-backed
+allowlist (`posts`, `pages`, `blocks`, `templates`, `template-parts`,
+`navigation`, `menu-items`), block/pattern directories, registered
+patterns/categories, pattern category terms, font families/faces/collections,
+icons/collections, abilities, block-editor support routes, view config, batch
+v1, and oEmbed.
 
 ## Discovery and custom routes
 
@@ -37,8 +39,11 @@ block-editor support routes, view config, batch v1, and oEmbed.
 
 ## Completeness and remaining design work
 
-- `CoreRouteSupport` is checked against the live WordPress 7.1 discovery route
-  map in Docker; an unknown default core route family fails E2E.
+- `CoreRouteSupport` matches live discovery routes to SDK-covered patterns
+  derived from `Endpoint` plus known nested subresources (not bare namespace
+  prefixes). An unknown default core route fails E2E until the SDK declares it.
+- Revisions and autosaves share one post-backed resource allowlist
+  (`PostBackedResources`).
 - Application passwords have no per-UUID update route in WordPress 7.1; the
   supported core operations are list/get/create/introspect/delete/delete-all.
 - ETag/Last-Modified conditional request helpers.

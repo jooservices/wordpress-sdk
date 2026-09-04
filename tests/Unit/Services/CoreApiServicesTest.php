@@ -24,15 +24,37 @@ final class CoreApiServicesTest extends TestCase
     public function testCoreRouteInventoryRejectsUnknownFamilies(): void
     {
         $routes = [
-            '/', '/batch/v1', '/oembed/1.0/embed', '/wp/v2/posts',
-            '/wp-site-health/v1/tests/page-cache', '/wp-block-editor/v1/export',
-            '/wp-abilities/v1/abilities', '/plugin/v1/items', '/wp/v2/future-resource',
+            '/',
+            '/batch/v1',
+            '/oembed/1.0/embed',
+            '/wp/v2/posts',
+            '/wp/v2/posts/(?P<id>[\\d]+)',
+            '/wp/v2/posts/(?P<id>[\\d]+)/revisions',
+            '/wp-site-health/v1/tests/page-cache',
+            '/wp-block-editor/v1/export',
+            '/wp-abilities/v1/abilities',
+            '/plugin/v1/items',
+            '/wp/v2/future-resource',
+            '/wp/v2/posts/(?P<id>[\\d]+)/brand-new-subroute',
+            '/wp-block-editor/v1/brand-new',
         ];
 
         self::assertSame(
-            ['/plugin/v1/items', '/wp/v2/future-resource'],
+            [
+                '/plugin/v1/items',
+                '/wp/v2/future-resource',
+                '/wp/v2/posts/(?P<id>[\\d]+)/brand-new-subroute',
+                '/wp-block-editor/v1/brand-new',
+            ],
             (new CoreRouteSupport())->unsupported($routes),
         );
+    }
+
+    public function testRevisionsAndAutosavesShareResourceAllowlist(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported revision resource: unknown');
+        $this->wordPress->revisions()->resource('unknown', 1);
     }
 
     public function testAutosavesCoverListGetCreateAndValidation(): void

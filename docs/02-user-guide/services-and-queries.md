@@ -19,8 +19,7 @@ first access and cached per facade instance.
 | `applicationPasswords()` | `ApplicationPassword` | scoped by user id |
 | `discovery()` | raw arrays | index/routes/schema |
 | `custom()` | raw arrays | arbitrary relative paths |
-| `revisions()` | raw arrays | posts/pages/blocks scopes |
-| `autosaves()` | raw arrays | every core post-backed scope |
+| `revisions()` / `autosaves()` | raw arrays | shared post-backed allowlist via `resource()` |
 | `plugins()` / `themes()` / `blocks()` / `blockTypes()` / `blockRenderer()` / `blockDirectory()` / `menuLocations()` / `navigations()` / `navMenus()` / `navMenuItems()` / `templates()` / `templateParts()` / `globalStyles()` / `widgets()` / `widgetTypes()` / `sidebars()` / `siteHealth()` | raw arrays | admin/editor groups |
 | `patterns()` / `fonts()` / `icons()` / `abilities()` | raw arrays | WordPress 7.1 registry and mutation groups |
 | `editor()` / `utility()` | raw arrays | editor support, batch, and oEmbed routes |

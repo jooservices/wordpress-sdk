@@ -6,6 +6,8 @@ namespace JOOservices\WordPress\Sdk\Services;
 
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 use JOOservices\WordPress\Sdk\Http\AbstractService;
+use JOOservices\WordPress\Sdk\Support\PostBackedResources;
+use JOOservices\WordPress\Sdk\Support\RestPath;
 
 /**
  * Revisions for all core post-backed REST resources (raw arrays).
@@ -14,25 +16,28 @@ final class RevisionsService extends AbstractService
 {
     public function posts(int $postId): RevisionResourceService
     {
-        return new RevisionResourceService($this, Endpoint::POSTS->withId($postId) . '/revisions');
+        return new RevisionResourceService($this, Endpoint::POSTS->withChild($postId, 'revisions'));
     }
 
     public function pages(int $pageId): RevisionResourceService
     {
-        return new RevisionResourceService($this, Endpoint::PAGES->withId($pageId) . '/revisions');
+        return new RevisionResourceService($this, Endpoint::PAGES->withChild($pageId, 'revisions'));
     }
 
     public function blocks(int $blockId): RevisionResourceService
     {
-        return new RevisionResourceService($this, Endpoint::BLOCKS->withId($blockId) . '/revisions');
+        return new RevisionResourceService($this, Endpoint::BLOCKS->withChild($blockId, 'revisions'));
     }
 
     public function resource(string $resource, int|string $parentId): RevisionResourceService
     {
-        $resource = (new \JOOservices\WordPress\Sdk\Support\RestPath())->normalize($resource);
-        $id = rawurlencode((string) $parentId);
+        $resource = (new RestPath())->normalize($resource);
+        PostBackedResources::assertSupported($resource, 'revision');
 
-        return new RevisionResourceService($this, 'wp/v2/' . $resource . '/' . $id . '/revisions');
+        return new RevisionResourceService(
+            $this,
+            PostBackedResources::childPath($resource, $parentId, 'revisions'),
+        );
     }
 
     /**

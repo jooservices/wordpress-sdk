@@ -158,7 +158,7 @@ v1: `AuthenticatorInterface` + `BasicAuthenticator` + `AppPasswordAuthenticator`
 
 v1: two enums with inconsistent path forms — `CoreEndpoint` values without leading slash, `TaxonomyEndpoint` values **with** leading slash; `CoreEndpoint::INDEX = 'wp-json'` unused; `CoreEndpoint::POSTS_BY_STATUS = 'wp/v2/posts?status=%s'` embedded a query string in an enum value (sprintf hack in `withValues()`).
 
-**v4 recommendation: one `Endpoint` enum** (string-backed, all values relative without leading slash, no query strings, no unused values), methods `path()`, `withId(int|string $id)`, `withKey(string $key)`, `withValues(array $values)`. Revisions/application-password sub-paths built by concatenation in the service (single place, documented).
+**v4 recommendation: one `Endpoint` enum** (string-backed, all values relative without leading slash, no query strings, no unused values), methods `path()`, `withId(int|string $id)`, `withKey(string $key)`, `withValues(array $values)`, `withChild(int|string $id, string $child)`. Nested subresources (revisions, autosaves, font-faces, application-passwords, media edit helpers, ability run) are built via `withChild()` / Endpoint leaf cases — never hard-coded path stems in services.
 
 ### 2.8 Exceptions (v1 → v4)
 
@@ -220,7 +220,7 @@ Every service extended `AbstractService` with the same 4-dependency constructor.
 | `CategoriesService` / `TagsService` | Term | via `AbstractTermService` (endpoint-only override) |
 | `SearchService` | SearchResult | list/search + all/cursor/each |
 | `TaxonomiesService` / `PostTypesService` / `StatusesService` | Taxonomy/PostType/Status | `get(string $key, …)`, list + pagination, no interfaces |
-| `SettingsService` | Settings | get/update — **constructed DTO manually, bypassing the decoder** ⚠️ |
+| `SettingsService` | Settings | get/update — hydrated via `Settings::from()` / decoder |
 | `ApplicationPasswordsService` | ApplicationPassword | list/get/create (typed), delete/deleteAll (raw); missing introspect + update subroutes ⚠️ |
 | `DiscoveryService` | raw | index()/routes()/schema($path) via OPTIONS |
 | `CustomEndpointService` | raw | get/post/put/patch/delete on `RestPath::normalize()`d paths |
@@ -233,7 +233,7 @@ Every service extended `AbstractService` with the same 4-dependency constructor.
 2. Force-delete unwrap (`{deleted: true, previous: …}`) copy-pasted 5× → **one protected helper in `AbstractService`**.
 3. `all()`/`cursor()`/`each()` copy-pasted in ~11 typed services → **one abstract `AbstractCollectionService`** with `fetchPage(array $query): PaginatedCollection` hook; `AbstractCrudService` (typed get/create/update/delete) and `AbstractStringKeyService` (get(string $key)) extend it.
 4. `updateItem()` always POSTed; `putRaw` existed but was dead → decide per resource; POST stays for WP (WP accepts POST for updates), drop dead `putRaw`.
-5. `SettingsService` manual DTO construction → route through the decoder like everything else.
+5. `SettingsService` hydrates through `Settings::from()` (flat WP map wrapped in `transformInput()`).
 6. `AbstractTermService` duplicated the typed CRUD surface → folded into `AbstractCrudService` (categories/tags are int-id CRUD like posts).
 
 **Consumer-demanded fix (highest priority):** `MediaService::update()` must be **public** — the management app hacked into protected `AbstractService::updateItem` via `Closure::bind` because the SDK lacked it.
@@ -315,7 +315,8 @@ WordPress 7.1 exposes no per-UUID application-password update route.
 
 **Remaining design work:** conditional ETag/Last-Modified helpers and typed
 write payload DTOs. The Docker E2E compares live WordPress 7.1 discovery data
-against `CoreRouteSupport` so unclassified default core route families fail.
+against `CoreRouteSupport` SDK-covered route patterns (Endpoint + nested
+subresources), so unclassified default core routes fail.
 
 ---
 
@@ -379,12 +380,14 @@ SOLID, DRY, KISS, YAGNI are mandatory (workspace PHP standard). Concrete applica
     "php": "^8.5",
     "jooservices/client": "^4.2",
     "jooservices/dto": "^3.2",
+    "jooservices/exceptions": "^4.0",
+    "nyholm/psr7": "^1.8",
     "psr/log": "^3.0"
   }
 }
 ```
 
-Dropped vs v1: symfony/serializer, symfony/property-info, symfony/property-access, symfony/validator, monolog/monolog, php-di/php-di (all replaced by dto engine + client + PSR-3 interface).
+Dropped vs v1: symfony/serializer, symfony/property-info, symfony/property-access, symfony/validator, monolog/monolog, php-di/php-di (all replaced by dto engine + client + PSR-3 interface). `nyholm/psr7` is a **direct** require because `WordPressService::fromConfig()` constructs `Psr17Factory` (not only transitive via client).
 
 ---
 
@@ -435,12 +438,24 @@ The upstream blockers were fixed and re-verified with probes in Docker:
 - `archives/JOOservices.2/wordpress-content-templates` — SDK consumer #1.
 - `archives/JOOservices.2/wordpress-management` + `archives/JOOservices.2/laravel-wordpress` (in archive root) — SDK consumer #2, handoff.md lessons.
 
-## 11. Implementation status update — 2026-09-01
+## 11. Implementation status update — 2026-09-04
 
 This update supersedes earlier roadmap statements in this historical knowledge
 base. The current tree implements the WordPress 7.1 default core REST route
 families, including patterns, autosaves/revisions, fonts, icons, abilities,
-editor support, batch, and oEmbed. `CoreRouteSupport` is reconciled against the
-live discovery map in a disposable Docker + WP-CLI E2E. The verified Unit gate
-is 96.70% statement coverage with no zero-covered production API.
-- Workspace: `client/` (v4.1.0), `dto/` (v3.1.0), `docs/02-engineering/02-quality/php-language-standard.md`, root `AGENTS.md`.
+editor support, batch, and oEmbed.
+
+Hidden-issue hardening (2026-09-04):
+
+- `CoreRouteSupport` matches discovery routes to SDK-covered patterns (not bare
+  namespace prefixes); unknown subroutes under known resources fail the gate.
+- `Endpoint` is the path SSOT (editor/oEmbed/site-health leaves + `withChild()`).
+- `Settings` hydrates through `from()` / `transformInput()`.
+- Revisions and autosaves share `PostBackedResources`.
+- `nyholm/psr7` is a direct composer require.
+
+`CoreRouteSupport` is reconciled against the live discovery map in a disposable
+Docker + WP-CLI E2E. The verified Unit gate targets >= 90% statement coverage
+with no zero-covered production API.
+- Workspace: `client/` (v4.2), `dto/` (v3.2), `exceptions/` (v4),
+  `docs/02-engineering/02-quality/php-language-standard.md`, root `AGENTS.md`.

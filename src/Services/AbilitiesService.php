@@ -29,7 +29,10 @@ final class AbilitiesService extends RawEndpointService
      */
     public function run(string $name, array $input = []): array
     {
-        return $this->postRaw(Endpoint::ABILITIES->path() . '/' . (new RestPath())->normalize($name) . '/run', ['input' => $input]);
+        return $this->postRaw(
+            Endpoint::ABILITIES->withChild((new RestPath())->normalize($name), 'run'),
+            ['input' => $input],
+        );
     }
     /** @return array<string, mixed> */
     public function categories(): array

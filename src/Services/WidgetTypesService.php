@@ -36,7 +36,7 @@ final class WidgetTypesService extends RawEndpointService
      */
     public function encode(string $id, array $payload): array
     {
-        return $this->postRaw(Endpoint::WIDGET_TYPES->withKey($id) . '/encode', $payload);
+        return $this->postRaw(Endpoint::WIDGET_TYPES->withChild($id, 'encode'), $payload);
     }
 
     /**
@@ -45,6 +45,6 @@ final class WidgetTypesService extends RawEndpointService
      */
     public function render(string $id, array $payload): array
     {
-        return $this->postRaw(Endpoint::WIDGET_TYPES->withKey($id) . '/render', $payload);
+        return $this->postRaw(Endpoint::WIDGET_TYPES->withChild($id, 'render'), $payload);
     }
 }

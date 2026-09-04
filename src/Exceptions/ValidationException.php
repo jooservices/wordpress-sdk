@@ -7,11 +7,12 @@ namespace JOOservices\WordPress\Sdk\Exceptions;
 use JOOservices\Exceptions\Support\ExceptionContext;
 use Throwable;
 
-/** HTTP 422 — WordPress `rest_invalid_param` with the per-field `params` map. */
+/** HTTP 422 / `rest_invalid_param` — per-field `params` map plus full WP payload. */
 final class ValidationException extends WordPressApiException
 {
     /**
      * @param array<string, mixed> $params WordPress `data.params` map (field => error)
+     * @param array<string, mixed>|null $data Full WordPress error payload when available
      */
     public function __construct(
         public readonly array $params,
@@ -19,11 +20,22 @@ final class ValidationException extends WordPressApiException
         int $code = 422,
         ?Throwable $previous = null,
         ?ExceptionContext $context = null,
+        ?array $data = null,
     ) {
-        parent::__construct($message, $code, [
-            'code' => 'rest_invalid_param',
-            'data' => ['params' => $params],
-        ], $previous, $context);
+        parent::__construct(
+            $message,
+            $code,
+            $data ?? [
+                'code' => 'rest_invalid_param',
+                'message' => $message,
+                'data' => [
+                    'status' => $code,
+                    'params' => $params,
+                ],
+            ],
+            $previous,
+            $context,
+        );
     }
 
     public function errorCode(): string
@@ -39,6 +51,7 @@ final class ValidationException extends WordPressApiException
             $this->getCode(),
             $this->getPrevious(),
             $context,
+            $this->data,
         );
     }
 }

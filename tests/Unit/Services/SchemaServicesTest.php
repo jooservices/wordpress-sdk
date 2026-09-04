@@ -35,6 +35,18 @@ final class SchemaServicesTest extends TestCase
         self::assertSame('/wp-json/wp/v2/taxonomies/category', $this->lastRequest()->getUri()->getPath());
     }
 
+    public function testTaxonomiesGetEncodesSpecialCharactersInSlug(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['slug' => 'a b', 'name' => 'Spaced']));
+        $this->httpFakes()->respond('GET', '*wp/v2/taxonomies/a%20b*', $sequence);
+
+        $taxonomy = $this->wordPress->taxonomies()->get('a b');
+
+        self::assertSame('Spaced', $taxonomy->name);
+        self::assertSame('/wp-json/wp/v2/taxonomies/a%20b', $this->lastRequest()->getUri()->getPath());
+    }
+
     public function testTaxonomiesListHandlesAssocPayload(): void
     {
         $sequence = new TestResponseSequence();
@@ -80,12 +92,13 @@ final class SchemaServicesTest extends TestCase
     public function testStatusesGetBySlug(): void
     {
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['name' => 'Publish', 'public' => true]));
+        $sequence->push(TestResponse::json(['name' => 'Publish', 'slug' => 'publish', 'public' => true]));
         $this->httpFakes()->respond('GET', '*wp/v2/statuses/publish*', $sequence);
 
         $status = $this->wordPress->statuses()->get('publish');
 
         self::assertInstanceOf(Status::class, $status);
+        self::assertSame('publish', $status->slug);
         self::assertTrue($status->public);
     }
 

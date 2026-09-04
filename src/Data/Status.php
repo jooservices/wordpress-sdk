@@ -19,5 +19,6 @@ final class Status extends Dto
         public readonly bool $queryable = false,
         public readonly bool $show_in_list = false,
         public readonly bool $date_floating = false,
+        public readonly string $slug = '',
     ) {}
 }

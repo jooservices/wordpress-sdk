@@ -18,7 +18,8 @@ For other schemes (bearer, JWT, API keys, custom middleware) build a
 | 401 | `UnauthorizedException` | invalid credentials/application password |
 | 403 | `ForbiddenException` | missing capability |
 | 404 | `NotFoundException` | invalid resource id |
-| 422 | `ValidationException` | carries `$params` (WordPress field map) |
+| 409 | `ConflictException` | duplicate slug / locked resource |
+| 422 | `ValidationException` | `$params` plus full WordPress `$data` payload |
 | 429 | `RateLimitException` | |
 | 5xx | `ServerException` | also HTML responses and undecodable bodies |
 | other | `WordPressApiException` | catch-all |

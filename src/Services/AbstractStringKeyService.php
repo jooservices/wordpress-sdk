@@ -25,7 +25,7 @@ abstract class AbstractStringKeyService extends AbstractCollectionService
     public function get(string $key, array|QueryParametersInterface|null $params = null): object
     {
         return $this->getItem(
-            $this->listPath() . '/' . $key,
+            $this->listPath() . '/' . rawurlencode($key),
             $this->dtoClass(),
             ['query' => $this->normalizeQueryParameters($params)],
         );

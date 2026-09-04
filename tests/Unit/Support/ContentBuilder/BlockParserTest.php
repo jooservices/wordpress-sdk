@@ -57,6 +57,21 @@ final class BlockParserTest extends TestCase
         self::assertSame([], $blocks[0]->attributes);
     }
 
+    public function testParsesParagraphPreservesInlineMarkup(): void
+    {
+        $blocks = $this->parser->parse(
+            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            $this->registry,
+        );
+
+        self::assertInstanceOf(Paragraph::class, $blocks[0]);
+        self::assertSame('Hello <strong>world</strong> and <em>friends</em>', $blocks[0]->text);
+        self::assertSame(
+            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            $blocks[0]->render(),
+        );
+    }
+
     public function testParsesHeadingWithLevel(): void
     {
         $blocks = $this->parser->parse(
@@ -95,6 +110,19 @@ final class BlockParserTest extends TestCase
         self::assertInstanceOf(Quote::class, $blocks[0]);
         self::assertSame('Text', $blocks[0]->content);
         self::assertSame('Author', $blocks[0]->citation);
+    }
+
+    public function testParsesQuoteWithMultipleParagraphs(): void
+    {
+        $source = "<!-- wp:quote -->\n"
+            . '<blockquote class="wp-block-quote"><p>First</p><p>Second</p></blockquote>'
+            . "\n<!-- /wp:quote -->";
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertInstanceOf(Quote::class, $blocks[0]);
+        self::assertSame("First\n\nSecond", $blocks[0]->content);
+        self::assertSame($source, $blocks[0]->render());
     }
 
     public function testParsesReadMoreWithCustomText(): void

@@ -138,6 +138,14 @@ final class BlocksTest extends TestCase
         );
     }
 
+    public function testQuoteRendersMultipleParagraphs(): void
+    {
+        self::assertSame(
+            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>First</p><p>Second</p></blockquote>\n<!-- /wp:quote -->",
+            (new Quote("First\n\nSecond"))->render(),
+        );
+    }
+
     public function testReadMoreSerializesCustomText(): void
     {
         self::assertSame(

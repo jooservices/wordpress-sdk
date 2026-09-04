@@ -167,7 +167,8 @@ try {
 | 401 | `UnauthorizedException` |
 | 403 | `ForbiddenException` |
 | 404 | `NotFoundException` |
-| 422 | `ValidationException` (carries WordPress `params` map) |
+| 409 | `ConflictException` |
+| 422 | `ValidationException` (`params` map + full WordPress payload) |
 | 429 | `RateLimitException` |
 | 5xx | `ServerException` |
 

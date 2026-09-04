@@ -31,7 +31,7 @@ class Post extends Dto
         public readonly ?RenderedContent $content = null,
         public readonly ?RenderedContent $excerpt = null,
         public readonly int $author = 0,
-        public readonly int $featured_media = 0,
+        public readonly ?int $featured_media = null,
         public readonly string $comment_status = '',
         public readonly string $ping_status = '',
         public readonly bool $sticky = false,

@@ -273,15 +273,15 @@ final class BlockParser
     private function createLeaf(string $name, string $className, array $attributes, string $inner): BlockInterface
     {
         return match ($name) {
-            'paragraph' => new Paragraph(trim(strip_tags($inner)), $attributes),
+            'paragraph' => new Paragraph($this->unwrapTag($inner, 'p'), $attributes),
             'heading' => $this->createHeading($attributes, $inner),
             'image' => $this->createImage($attributes, $inner),
             'quote' => $this->createQuote($attributes, $inner),
-            'code' => new Code(html_entity_decode(trim(strip_tags($inner)), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'), $attributes),
+            'code' => new Code($this->unwrapCode($inner), $attributes),
             'shortcode' => new Shortcode(trim($inner), $attributes),
             'html' => new HtmlBlock($inner, $attributes),
             'more' => $this->createReadMore($attributes, $inner),
-            'read-more' => new ReadMoreButton(trim(strip_tags($inner)), $attributes),
+            'read-more' => new ReadMoreButton($this->anchorInnerHtml($inner), $attributes),
             'nextpage' => new PageBreak($attributes),
             'separator' => new Separator($attributes),
             'button' => $this->createButton($attributes, $inner),
@@ -295,9 +295,12 @@ final class BlockParser
     private function createQuote(array $attributes, string $inner): Quote
     {
         $withoutCite = preg_replace('/<cite>.*?<\/cite>/is', '', $inner) ?? $inner;
+        $body = $this->unwrapTag($withoutCite, 'blockquote');
+        $body = preg_replace('#</p>\s*<p\b[^>]*>#i', "\n\n", $body) ?? $body;
+        $body = $this->unwrapTag($body, 'p');
 
         return new Quote(
-            trim(strip_tags($withoutCite)),
+            trim($body),
             $this->stringAttribute($attributes, 'citation'),
             $attributes,
         );
@@ -309,10 +312,11 @@ final class BlockParser
     private function createHeading(array $attributes, string $inner): Heading
     {
         $level = $attributes['level'] ?? 2;
+        $resolvedLevel = is_int($level) && $level >= 1 && $level <= 6 ? $level : 2;
 
         return new Heading(
-            trim(strip_tags($inner)),
-            is_int($level) && $level >= 1 && $level <= 6 ? $level : 2,
+            $this->unwrapHeading($inner, $resolvedLevel),
+            $resolvedLevel,
             $attributes,
         );
     }
@@ -360,7 +364,50 @@ final class BlockParser
             $url = html_entity_decode($match[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         }
 
-        return new Button(trim(strip_tags($inner)), $url, $attributes);
+        return new Button($this->anchorInnerHtml($inner), $url, $attributes);
+    }
+
+    /**
+     * Keep inline markup; only unwrap a single outer HTML tag when present.
+     */
+    private function unwrapTag(string $html, string $tag): string
+    {
+        $trimmed = trim($html);
+        $quoted = preg_quote($tag, '#');
+        if (preg_match('#^<' . $quoted . '\b[^>]*>(.*)</' . $quoted . '>\s*$#is', $trimmed, $match) === 1) {
+            return trim($match[1]);
+        }
+
+        return $trimmed;
+    }
+
+    private function unwrapHeading(string $html, int $level): string
+    {
+        $trimmed = trim($html);
+        if (preg_match('#^<h([1-6])\b[^>]*>(.*)</h\1>\s*$#is', $trimmed, $match) === 1) {
+            return trim($match[2]);
+        }
+
+        return $this->unwrapTag($html, 'h' . $level);
+    }
+
+    private function unwrapCode(string $html): string
+    {
+        $trimmed = trim($html);
+        if (preg_match('#<code\b[^>]*>(.*)</code>#is', $trimmed, $match) === 1) {
+            return html_entity_decode(trim($match[1]), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        }
+
+        return html_entity_decode($trimmed, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+    }
+
+    private function anchorInnerHtml(string $html): string
+    {
+        if (preg_match('#<a\b[^>]*>(.*?)</a>#is', $html, $match) === 1) {
+            return trim($match[1]);
+        }
+
+        return trim($html);
     }
 
     /**

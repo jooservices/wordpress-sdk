@@ -24,15 +24,64 @@ final class CoreApiServicesTest extends TestCase
     public function testCoreRouteInventoryRejectsUnknownFamilies(): void
     {
         $routes = [
-            '/', '/batch/v1', '/oembed/1.0/embed', '/wp/v2/posts',
-            '/wp-site-health/v1/tests/page-cache', '/wp-block-editor/v1/export',
-            '/wp-abilities/v1/abilities', '/plugin/v1/items', '/wp/v2/future-resource',
+            '/',
+            '/batch/v1',
+            '/oembed/1.0/embed',
+            '/wp/v2/posts',
+            '/wp/v2/posts/(?P<id>[\\d]+)',
+            '/wp/v2/posts/(?P<id>[\\d]+)/revisions',
+            '/wp-site-health/v1/tests/page-cache',
+            '/wp-block-editor/v1/export',
+            '/wp-abilities/v1/abilities',
+            '/plugin/v1/items',
+            '/wp/v2/future-resource',
+            '/wp/v2/posts/(?P<id>[\\d]+)/brand-new-subroute',
+            '/wp-block-editor/v1/brand-new',
         ];
 
         self::assertSame(
-            ['/plugin/v1/items', '/wp/v2/future-resource'],
+            [
+                '/plugin/v1/items',
+                '/wp/v2/future-resource',
+                '/wp/v2/posts/(?P<id>[\\d]+)/brand-new-subroute',
+                '/wp-block-editor/v1/brand-new',
+            ],
             (new CoreRouteSupport())->unsupported($routes),
         );
+
+        $templateRoutes = [
+            '/wp/v2/templates/(?P<parent>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)/revisions',
+            '/wp/v2/templates/(?P<id>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)',
+            '/wp/v2/template-parts/(?P<parent>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)/autosaves/(?P<id>[\d]+)',
+            '/wp/v2/global-styles/(?P<parent>[\d]+)/revisions',
+            '/wp/v2/global-styles/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)',
+        ];
+        self::assertSame([], (new CoreRouteSupport())->unsupported($templateRoutes));
+
+        self::assertSame(
+            [
+                '/oembed/1.0/unknown',
+                '/wp/v2/settings/extra',
+                '/wp/v2/view-config/extra',
+            ],
+            (new CoreRouteSupport())->unsupported([
+                '/oembed/1.0',
+                '/oembed/1.0/embed',
+                '/oembed/1.0/proxy',
+                '/oembed/1.0/unknown',
+                '/wp/v2/settings',
+                '/wp/v2/settings/extra',
+                '/wp/v2/view-config',
+                '/wp/v2/view-config/extra',
+            ]),
+        );
+    }
+
+    public function testRevisionsAndAutosavesShareResourceAllowlist(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('Unsupported revision resource: unknown');
+        $this->wordPress->revisions()->resource('unknown', 1);
     }
 
     public function testAutosavesCoverListGetCreateAndValidation(): void

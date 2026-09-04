@@ -87,6 +87,6 @@ final class FontsService extends RawEndpointService
 
     private function facesPath(int $familyId): string
     {
-        return Endpoint::FONT_FAMILIES->withId($familyId) . '/font-faces';
+        return Endpoint::FONT_FAMILIES->withChild($familyId, 'font-faces');
     }
 }

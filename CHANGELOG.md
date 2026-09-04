@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Treat `Endpoint` as the REST path SSOT (editor / oEmbed / site-health leaves,
+  `withChild()` for nested subresources).
+- Hydrate `Settings` through `jooservices/dto` `from()` instead of `new Settings()`.
+- Align revisions and autosaves on a shared `PostBackedResources` allowlist.
+- Tighten `CoreRouteSupport` to SDK-covered route patterns (unknown subroutes
+  under known resources fail the gate).
+- Declare `nyholm/psr7` as a direct runtime dependency for `Psr17Factory`.
+
 ### Changed
 
 - `WordPressApiException` (and HTTP subclasses) now extend

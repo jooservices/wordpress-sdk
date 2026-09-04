@@ -61,7 +61,7 @@ WordPress application passwords are Basic auth — `create()` wires it for you.
 | Application passwords | `applicationPasswords()` | typed list/get/create/introspect, raw delete/deleteAll |
 | Discovery | `discovery()` | index / routes / schema (OPTIONS) |
 | Custom endpoints | `custom()` | GET/POST/PUT/PATCH/DELETE raw arrays |
-| Revisions / autosaves | `revisions()` / `autosaves()` | every core post-backed resource (raw) |
+| Revisions / autosaves | `revisions()` / `autosaves()` | shared allowlist of core post-backed resources (raw) |
 | Plugins / Themes | `plugins()` / `themes()` | raw arrays |
 | Blocks / Block types / Renderer / Directory | `blocks()` / `blockTypes()` / `blockRenderer()` / `blockDirectory()` | raw arrays |
 | Menus / Navigation | `menuLocations()` / `navigations()` / `navMenus()` / `navMenuItems()` | raw arrays |
@@ -75,9 +75,11 @@ WordPress application passwords are Basic auth — `create()` wires it for you.
 | Block editor | `editor()` | URL details, export, navigation fallback, view config |
 | Batch / oEmbed | `utility()` | core batch mutations + embed/proxy |
 
-`CoreRouteSupport` audits a live discovery document. The Docker E2E fails if
-WordPress adds a new default core route family without first-class SDK support.
-Plugin and theme namespaces remain available through `custom()`.
+`CoreRouteSupport` audits a live discovery document against **SDK-covered
+route patterns** (Endpoint cases + known nested subresources such as
+revisions/autosaves/font-faces). The Docker E2E fails when WordPress adds a
+new default core route that the SDK has not declared. Plugin and theme
+namespaces remain available through `custom()`.
 
 ## Typed querying
 

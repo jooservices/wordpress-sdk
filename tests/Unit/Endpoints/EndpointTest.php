@@ -62,4 +62,17 @@ final class EndpointTest extends TestCase
         self::assertSame('wp/v2/widget-types', Endpoint::WIDGET_TYPES->path());
         self::assertSame('wp/v2/sidebars', Endpoint::SIDEBARS->path());
     }
+
+    public function testWithChildBuildsNestedSubresourcePaths(): void
+    {
+        self::assertSame('wp/v2/posts/9/revisions', Endpoint::POSTS->withChild(9, 'revisions'));
+        self::assertSame(
+            'wp/v2/font-families/1/font-faces',
+            Endpoint::FONT_FAMILIES->withChild(1, 'font-faces'),
+        );
+        self::assertSame('wp-block-editor/v1/export', Endpoint::EDITOR_EXPORT->path());
+        self::assertSame('wp/v2/view-config', Endpoint::VIEW_CONFIG->path());
+        self::assertSame('oembed/1.0/embed', Endpoint::OEMBED_EMBED->path());
+        self::assertSame('oembed/1.0', Endpoint::OEMBED_ROOT->path());
+    }
 }

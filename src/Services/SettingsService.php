@@ -9,17 +9,15 @@ use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 use JOOservices\WordPress\Sdk\Http\AbstractService;
 
 /**
- * Site settings (`/wp/v2/settings`). Settings are a dynamic key/value map,
- * so the DTO is constructed directly from the raw response.
+ * Site settings (`/wp/v2/settings`). Settings are a dynamic key/value map
+ * hydrated through `Settings::from()` like every other DTO.
  */
 final class SettingsService extends AbstractService
 {
     public function get(): Settings
     {
-        /** @var array<string, mixed> $data */
-        $data = $this->requestArray('GET', Endpoint::SETTINGS->path());
-
-        return new Settings($data);
+        /** @var Settings */
+        return $this->getItem(Endpoint::SETTINGS->path(), Settings::class);
     }
 
     /**
@@ -27,9 +25,7 @@ final class SettingsService extends AbstractService
      */
     public function update(array $payload): Settings
     {
-        /** @var array<string, mixed> $data */
-        $data = $this->requestArray('POST', Endpoint::SETTINGS->path(), ['body' => $payload]);
-
-        return new Settings($data);
+        /** @var Settings */
+        return $this->createItem(Endpoint::SETTINGS->path(), $payload, Settings::class);
     }
 }

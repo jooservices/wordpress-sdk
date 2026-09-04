@@ -44,12 +44,12 @@ final class GlobalStylesService extends RawEndpointService
      */
     public function theme(string $stylesheet): array
     {
-        return $this->getRaw(Endpoint::GLOBAL_STYLES->path() . '/themes/' . $this->segment($stylesheet));
+        return $this->getRaw(Endpoint::GLOBAL_STYLES->withValues(['themes', $stylesheet]));
     }
 
     /** @return array<string, mixed> */
     public function variations(string $stylesheet): array
     {
-        return $this->getRaw(Endpoint::GLOBAL_STYLES->path() . '/themes/' . $this->segment($stylesheet) . '/variations');
+        return $this->getRaw(Endpoint::GLOBAL_STYLES->withValues(['themes', $stylesheet, 'variations']));
     }
 }

@@ -29,14 +29,15 @@ final class UtilityService extends RawEndpointService
      */
     public function embed(string $url, array $query = []): array
     {
-        return $this->getRaw(Endpoint::OEMBED->path() . '/embed', ['url' => $url, ...$query]);
+        return $this->getRaw(Endpoint::OEMBED_EMBED->path(), ['url' => $url, ...$query]);
     }
+
     /**
      * @param array<string, mixed> $query
      * @return array<string, mixed>
      */
     public function proxy(string $url, array $query = []): array
     {
-        return $this->getRaw(Endpoint::OEMBED->path() . '/proxy', ['url' => $url, ...$query]);
+        return $this->getRaw(Endpoint::OEMBED_PROXY->path(), ['url' => $url, ...$query]);
     }
 }

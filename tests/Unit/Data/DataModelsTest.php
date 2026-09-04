@@ -241,12 +241,20 @@ final class DataModelsTest extends TestCase
 
     public function testSettingsWrapValuesAndLookUpKeys(): void
     {
-        $settings = new Settings(['title' => 'My Site', 'users_can_register' => 0]);
+        $settings = Settings::from(['title' => 'My Site', 'users_can_register' => 0]);
 
         self::assertSame('My Site', $settings->get('title'));
         self::assertSame(0, $settings->get('users_can_register'));
         self::assertSame('fallback', $settings->get('missing', 'fallback'));
         self::assertNull($settings->get('missing'));
+    }
+
+    public function testSettingsPreservesArrayValuedSettingNamedValues(): void
+    {
+        $settings = Settings::from(['values' => ['title' => 'My Site']]);
+
+        self::assertSame(['title' => 'My Site'], $settings->get('values'));
+        self::assertSame(['values' => ['title' => 'My Site']], $settings->toArray());
     }
 
     public function testApplicationPasswordHydrates(): void

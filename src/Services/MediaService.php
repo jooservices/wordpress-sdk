@@ -17,7 +17,7 @@ final class MediaService extends AbstractCrudService
     /** @return array<string, mixed> */
     public function postProcess(int $id, string $action): array
     {
-        return $this->requestArray('POST', Endpoint::MEDIA->withId($id) . '/post-process', [
+        return $this->requestArray('POST', Endpoint::MEDIA->withChild($id, 'post-process'), [
             'body' => ['action' => $action],
         ]);
     }
@@ -28,7 +28,7 @@ final class MediaService extends AbstractCrudService
      */
     public function edit(int $id, array $payload): array
     {
-        return $this->requestArray('POST', Endpoint::MEDIA->withId($id) . '/edit', ['body' => $payload]);
+        return $this->requestArray('POST', Endpoint::MEDIA->withChild($id, 'edit'), ['body' => $payload]);
     }
 
     /**

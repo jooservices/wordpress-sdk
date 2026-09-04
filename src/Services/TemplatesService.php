@@ -24,6 +24,6 @@ final class TemplatesService extends RawEndpointService
      */
     public function lookup(array $query): array
     {
-        return $this->getRaw(Endpoint::TEMPLATES->path() . '/lookup', $query);
+        return $this->getRaw(Endpoint::TEMPLATES->withKey('lookup'), $query);
     }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Tests\Unit\Exceptions;
 
+use JOOservices\Exceptions\Contracts\JOOExceptionInterface;
 use JOOservices\WordPress\Sdk\Exceptions\BadRequestException;
 use JOOservices\WordPress\Sdk\Exceptions\ForbiddenException;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
@@ -24,23 +25,29 @@ final class ExceptionsTest extends TestCase
         self::assertSame('Something failed', $exception->getMessage());
         self::assertSame(418, $exception->getCode());
         self::assertSame(['code' => 'oops', 'data' => []], $exception->data);
+        self::assertSame('wordpress.http.apierror', $exception->errorCode());
+        self::assertArrayHasKey('error_code', $exception->toLogArray());
+        self::assertSame('wordpress.http.apierror', $exception->toLogArray()['error_code']);
+        self::assertContains(JOOExceptionInterface::class, class_implements($exception) ?: []);
     }
 
-    public function testSubclassesShareTheBaseException(): void
+    public function testSubclassesShareTheBaseExceptionAndErrorCodes(): void
     {
         $cases = [
-            BadRequestException::class => 400,
-            UnauthorizedException::class => 401,
-            ForbiddenException::class => 403,
-            NotFoundException::class => 404,
-            RateLimitException::class => 429,
-            ServerException::class => 500,
+            BadRequestException::class => [400, 'wordpress.http.badrequest'],
+            UnauthorizedException::class => [401, 'wordpress.http.unauthorized'],
+            ForbiddenException::class => [403, 'wordpress.http.forbidden'],
+            NotFoundException::class => [404, 'wordpress.http.notfound'],
+            RateLimitException::class => [429, 'wordpress.http.ratelimit'],
+            ServerException::class => [500, 'wordpress.http.servererror'],
         ];
 
-        foreach ($cases as $class => $code) {
+        foreach ($cases as $class => [$code, $errorCode]) {
             $exception = new $class('x', $code);
 
             self::assertSame($code, $exception->getCode());
+            self::assertSame($errorCode, $exception->errorCode());
+            self::assertSame($errorCode, $exception->toLogArray()['error_code']);
         }
     }
 
@@ -51,6 +58,17 @@ final class ExceptionsTest extends TestCase
         self::assertSame(['title' => 'Cannot be empty.'], $exception->params);
         self::assertSame(422, $exception->getCode());
         self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
+        self::assertSame('wordpress.http.validation', $exception->errorCode());
+    }
+
+    public function testWithContextPreservesPayload(): void
+    {
+        $exception = (new NotFoundException('missing', 404, ['code' => 'rest_post_invalid_id']))
+            ->withContext(['request_id' => 'abc']);
+
+        self::assertSame('rest_post_invalid_id', $exception->data['code'] ?? null);
+        self::assertSame('abc', $exception->getRawContext()['request_id'] ?? null);
+        self::assertSame('wordpress.http.notfound', $exception->errorCode());
     }
 
     public function testToArrayStructure(): void
@@ -70,6 +88,7 @@ final class ExceptionsTest extends TestCase
         self::assertSame(['status' => 404], $array['wordpress_data']);
         self::assertSame(['code' => 'rest_post_invalid_id', 'message' => 'Not found', 'data' => ['status' => 404]], $array['response']);
         self::assertNull($array['previous']);
+        self::assertSame('wordpress.http.apierror', $array['error_code']);
     }
 
     public function testToArrayRedactsCredentials(): void

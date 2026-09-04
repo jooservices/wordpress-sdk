@@ -74,7 +74,7 @@ final class ExceptionsTest extends TestCase
                 'details' => ['title' => ['code' => 'rest_missing_callback_param']],
             ],
         ];
-        $exception = new ValidationException(['title' => 'Required'], 'Invalid parameter(s)', 422, $payload);
+        $exception = new ValidationException(['title' => 'Required'], 'Invalid parameter(s)', 422, data: $payload);
 
         self::assertSame($payload, $exception->data);
         self::assertSame(['title' => 'Required'], $exception->params);

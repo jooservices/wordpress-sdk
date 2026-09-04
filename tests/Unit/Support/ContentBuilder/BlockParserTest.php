@@ -112,6 +112,19 @@ final class BlockParserTest extends TestCase
         self::assertSame('Author', $blocks[0]->citation);
     }
 
+    public function testParsesQuoteWithMultipleParagraphs(): void
+    {
+        $source = "<!-- wp:quote -->\n"
+            . '<blockquote class="wp-block-quote"><p>First</p><p>Second</p></blockquote>'
+            . "\n<!-- /wp:quote -->";
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertInstanceOf(Quote::class, $blocks[0]);
+        self::assertSame("First\n\nSecond", $blocks[0]->content);
+        self::assertSame($source, $blocks[0]->render());
+    }
+
     public function testParsesReadMoreWithCustomText(): void
     {
         $blocks = $this->parser->parse(

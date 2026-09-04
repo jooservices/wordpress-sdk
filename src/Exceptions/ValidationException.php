@@ -18,9 +18,9 @@ final class ValidationException extends WordPressApiException
         public readonly array $params,
         string $message = 'Validation failed',
         int $code = 422,
-        ?array $data = null,
         ?Throwable $previous = null,
         ?ExceptionContext $context = null,
+        ?array $data = null,
     ) {
         parent::__construct(
             $message,
@@ -49,9 +49,9 @@ final class ValidationException extends WordPressApiException
             $this->params,
             $this->getMessage(),
             $this->getCode(),
-            $this->data,
             $this->getPrevious(),
             $context,
+            $this->data,
         );
     }
 }

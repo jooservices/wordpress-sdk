@@ -152,7 +152,11 @@ final class CoreApiServicesTest extends TestCase
         file_put_contents($file, 'font-bytes');
         try {
             $this->respond('POST', 'wp/v2/font-families/1/font-faces', ['id' => 6]);
-            self::assertSame(['id' => 6], $fonts->uploadFace(1, $file, ['font_weight' => '700']));
+            self::assertSame(['id' => 6], $fonts->uploadFace(1, $file, [
+                'fontFamily' => 'Inter',
+                'fontWeight' => '700',
+                'fontStyle' => 'normal',
+            ]));
             $request = $this->lastRequest();
             self::assertInstanceOf(\JOOservices\Client\Request\MultipartStream::class, $request->getBody());
             self::assertStringStartsWith('multipart/form-data; boundary=', $request->getHeaderLine('Content-Type'));

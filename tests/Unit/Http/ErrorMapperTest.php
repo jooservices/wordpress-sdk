@@ -117,6 +117,19 @@ final class ErrorMapperTest extends TestCase
         self::assertSame([], $exception->params);
     }
 
+    public function testValidationWithEmptyBodyUsesDefaultPayload(): void
+    {
+        $exception = $this->mapper->map(TestResponse::make(422, [], '{}'));
+
+        self::assertInstanceOf(ValidationException::class, $exception);
+        self::assertSame([], $exception->params);
+        self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
+        self::assertSame(
+            ['status' => 422, 'params' => []],
+            $exception->data['data'] ?? null,
+        );
+    }
+
     public function testNonJsonBodyStillMapsStatus(): void
     {
         $exception = $this->mapper->map(TestResponse::make(500, [], '<html>oops</html>'));

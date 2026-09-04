@@ -24,6 +24,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `AbstractStringKeyService::get()`.
 - Preserve inline HTML when parsing Gutenberg leaves (`BlockParser` no longer
   `strip_tags()` rich text).
+- Append `Status::$slug` after existing constructor parameters to keep
+  positional callers compatible.
+- Keep `ValidationException` positional args (`$previous`, `$context`) stable;
+  pass full payloads via named `data:`.
+- Default `ValidationException` payload when a 422 body is empty/`{}`.
+- Send WordPress `font_face_settings` JSON (with `src: ["file"]`) from
+  `FontsService::uploadFace()`.
+- Render multi-paragraph quotes as separate `<p>` elements.
 
 ### Added
 

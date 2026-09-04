@@ -7,6 +7,7 @@ namespace JOOservices\WordPress\Sdk\Services;
 use InvalidArgumentException;
 use JOOservices\Client\Request\MultipartPart;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
+use JsonException;
 
 /** Font families, nested font faces, and installable font collections. */
 final class FontsService extends RawEndpointService
@@ -76,11 +77,15 @@ final class FontsService extends RawEndpointService
     /**
      * Uploads a font file as a new face under a family (multipart/form-data).
      *
-     * @param array<string, mixed> $attributes scalar face fields (font_family_settings
-     *                                         JSON string, font_weight, font_style, …)
+     * WordPress expects a binary part named `file` and a required
+     * `font_face_settings` JSON string whose `src` references that part.
+     *
+     * @param array<string, mixed> $settings theme.json font-face fields
+     *                                       (`fontFamily`, `fontWeight`, `fontStyle`, …).
+     *                                       Defaults `src` to `['file']` when omitted.
      * @return array<string, mixed>
      */
-    public function uploadFace(int $familyId, string $filePath, array $attributes = []): array
+    public function uploadFace(int $familyId, string $filePath, array $settings = []): array
     {
         if (! is_file($filePath) || ! is_readable($filePath)) {
             throw new InvalidArgumentException(sprintf('File not found or not readable: %s', $filePath));
@@ -91,12 +96,12 @@ final class FontsService extends RawEndpointService
             throw new InvalidArgumentException(sprintf('File could not be opened: %s', $filePath));
         }
 
-        $parts = [new MultipartPart('file', $stream, filename: basename($filePath))];
-        foreach ($attributes as $key => $value) {
-            if (is_scalar($value)) {
-                $parts[] = new MultipartPart((string) $key, (string) $value);
-            }
-        }
+        $encoded = $this->encodeFontFaceSettings($settings);
+
+        $parts = [
+            new MultipartPart('file', $stream, filename: basename($filePath)),
+            new MultipartPart('font_face_settings', $encoded),
+        ];
 
         try {
             return $this->requestArray('POST', $this->facesPath($familyId), ['multipart' => $parts]);
@@ -130,6 +135,22 @@ final class FontsService extends RawEndpointService
     public function collection(string $slug): array
     {
         return $this->getRaw(Endpoint::FONT_COLLECTIONS->withKey($slug));
+    }
+
+    /**
+     * @param array<string, mixed> $settings
+     */
+    private function encodeFontFaceSettings(array $settings): string
+    {
+        if (! array_key_exists('src', $settings)) {
+            $settings['src'] = ['file'];
+        }
+
+        try {
+            return json_encode($settings, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new InvalidArgumentException('font_face_settings could not be encoded as JSON.', 0, $exception);
+        }
     }
 
     private function facesPath(int $familyId): string

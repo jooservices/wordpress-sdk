@@ -39,7 +39,7 @@ final class ErrorMapper
                 $this->validationParams($data),
                 $message,
                 422,
-                $data,
+                data: $data !== [] ? $data : null,
             ),
             $statusCode === 429 => new RateLimitException($message, 429, $data),
             $statusCode >= 500 => new ServerException($message, $statusCode, $data),
@@ -53,7 +53,12 @@ final class ErrorMapper
     private function handleBadRequest(array $data, string $message): WordPressApiException
     {
         if (($data['code'] ?? null) === 'rest_invalid_param') {
-            return new ValidationException($this->validationParams($data), $message, 400, $data);
+            return new ValidationException(
+                $this->validationParams($data),
+                $message,
+                400,
+                data: $data,
+            );
         }
 
         return new BadRequestException($message, 400, $data);

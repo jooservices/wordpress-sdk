@@ -33,10 +33,20 @@ final class Quote extends AbstractBlock
     protected function getContent(): string
     {
         $cite = $this->citation !== '' ? sprintf('<cite>%s</cite>', $this->citation) : '';
+        $paragraphs = preg_split("/\n\s*\n/", $this->content) ?: [$this->content];
+        $body = '';
+        foreach ($paragraphs as $paragraph) {
+            $trimmed = trim($paragraph);
+            if ($trimmed === '') {
+                continue;
+            }
+
+            $body .= sprintf('<p>%s</p>', $trimmed);
+        }
 
         return sprintf(
-            '<blockquote class="wp-block-quote"><p>%s</p>%s</blockquote>',
-            $this->content,
+            '<blockquote class="wp-block-quote">%s%s</blockquote>',
+            $body,
             $cite,
         );
     }

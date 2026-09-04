@@ -14,7 +14,7 @@ permissions:
 jobs:
   validate:
     name: Validate PR title
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-latest
     timeout-minutes: 10
     if: github.actor != 'dependabot[bot]' && !startsWith(github.head_ref, 'dependabot/')
     steps:

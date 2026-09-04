@@ -1,8 +1,6 @@
-# jooservices/wordpress-sdk — Agent notes
+# jooservices/wordpress-sdk
 
-This repository belongs to JOOservices. Follow workspace root `AGENTS.md`.
-
-Project-specific:
+This file adds project-only rules.
 
 - PHP `^8.5`; runtime deps: `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `psr/log ^3.0`
 - First public line: **`v4.0.0`** — ground-up rebuild of the archived v1.x SDK
@@ -16,4 +14,5 @@ Project-specific:
   - One `Endpoint` enum; one `AbstractCrudService`; one `RawCrud` trait; dead contracts never re-added
   - Tests exercise the real request path via `ClientBuilder::fake()` / `HttpFakeRegistry` — no NullHttpClient-style doubles
 - Unit test files mirror `src/` paths under `tests/Unit/`
+- Branch model: `develop` for integration, `master` for production, tags from `master`
 - IDE: Pint format-on-save — use `tools/pint` (Docker wrapper) or `make lint:fix`

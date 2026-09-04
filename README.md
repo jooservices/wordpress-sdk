@@ -1,6 +1,9 @@
 # JOOservices WordPress SDK
 
+[![CI](https://github.com/jooservices/wordpress-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/jooservices/wordpress-sdk/actions/workflows/ci.yml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/wordpress-sdk/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/wordpress-sdk)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
+[![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 DTO-first PHP 8.5 SDK for the WordPress REST API — typed content automation,
@@ -231,3 +234,4 @@ live credentials and never log authorization headers. See
 - [Upgrade from v1.x](./UPGRADE-4.0.md)
 - [CI/CD workflows](./WORKFLOWS.md)
 - [Release and rollback](./docs/04-maintenance/release-and-rollback.md)
+- [Support](./SUPPORT.md) · [Governance](./GOVERNANCE.md) · [Code of Conduct](./CODE_OF_CONDUCT.md)

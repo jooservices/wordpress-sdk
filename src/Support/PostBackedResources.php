@@ -8,12 +8,16 @@ use InvalidArgumentException;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 
 /**
- * Shared allowlist for core post-backed REST resources that expose
- * revisions and autosaves.
+ * Shared allowlists for core REST resources that expose revisions and/or
+ * autosaves.
  */
 final class PostBackedResources
 {
-    /** @var list<string> */
+    /**
+     * Resources with both revisions and autosaves (post-backed editor types).
+     *
+     * @var list<string>
+     */
     public const NAMES = [
         'posts',
         'pages',
@@ -24,9 +28,36 @@ final class PostBackedResources
         'menu-items',
     ];
 
+    /**
+     * Resources that expose revisions (includes global styles).
+     *
+     * @var list<string>
+     */
+    public const WITH_REVISIONS = [
+        'posts',
+        'pages',
+        'blocks',
+        'templates',
+        'template-parts',
+        'navigation',
+        'menu-items',
+        'global-styles',
+    ];
+
+    /**
+     * @var list<string>
+     */
+    public const WITH_AUTOSAVES = self::NAMES;
+
     public static function assertSupported(string $resource, string $feature): void
     {
-        if (! in_array($resource, self::NAMES, true)) {
+        $allowlist = match ($feature) {
+            'revision' => self::WITH_REVISIONS,
+            'autosave' => self::WITH_AUTOSAVES,
+            default => self::NAMES,
+        };
+
+        if (! in_array($resource, $allowlist, true)) {
             throw new InvalidArgumentException(
                 sprintf('Unsupported %s resource: %s', $feature, $resource),
             );
@@ -43,6 +74,7 @@ final class PostBackedResources
             'template-parts' => Endpoint::TEMPLATE_PARTS,
             'navigation' => Endpoint::NAVIGATIONS,
             'menu-items' => Endpoint::NAV_MENU_ITEMS,
+            'global-styles' => Endpoint::GLOBAL_STYLES,
             default => throw new InvalidArgumentException('Unsupported post-backed resource: ' . $resource),
         };
     }

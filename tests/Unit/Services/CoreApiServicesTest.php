@@ -48,6 +48,15 @@ final class CoreApiServicesTest extends TestCase
             ],
             (new CoreRouteSupport())->unsupported($routes),
         );
+
+        $templateRoutes = [
+            '/wp/v2/templates/(?P<parent>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)/revisions',
+            '/wp/v2/templates/(?P<id>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)',
+            '/wp/v2/template-parts/(?P<parent>([^\/:<>\*\?"\|]+(?:\/[^\/:<>\*\?"\|]+)?)[\/\w%-]+)/autosaves/(?P<id>[\d]+)',
+            '/wp/v2/global-styles/(?P<parent>[\d]+)/revisions',
+            '/wp/v2/global-styles/(?P<parent>[\d]+)/revisions/(?P<id>[\d]+)',
+        ];
+        self::assertSame([], (new CoreRouteSupport())->unsupported($templateRoutes));
     }
 
     public function testRevisionsAndAutosavesShareResourceAllowlist(): void

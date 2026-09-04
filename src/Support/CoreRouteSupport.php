@@ -71,10 +71,14 @@ final class CoreRouteSupport
             $patterns[] = '/' . $endpoint->path() . '/*';
         }
 
-        foreach (PostBackedResources::NAMES as $resource) {
+        foreach (PostBackedResources::WITH_REVISIONS as $resource) {
             $base = '/' . PostBackedResources::endpoint($resource)->path();
             $patterns[] = $base . '/*/revisions';
             $patterns[] = $base . '/*/revisions/*';
+        }
+
+        foreach (PostBackedResources::WITH_AUTOSAVES as $resource) {
+            $base = '/' . PostBackedResources::endpoint($resource)->path();
             $patterns[] = $base . '/*/autosaves';
             $patterns[] = $base . '/*/autosaves/*';
         }
@@ -107,11 +111,67 @@ final class CoreRouteSupport
 
     private function normalizeDiscoveryRoute(string $route): string
     {
-        $normalized = preg_replace('#\(\?P<[^>]+>[^)]+\)#', '*', $route) ?? $route;
+        $normalized = $this->replaceNamedCaptures($route);
         $normalized = preg_replace('#/+#', '/', $normalized) ?? $normalized;
 
         if ($normalized !== '/' && str_ends_with($normalized, '/')) {
             $normalized = rtrim($normalized, '/');
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * Replace `(?P<name>…)` segments with `*`, including nested parentheses
+     * used by WordPress template / template-part id patterns.
+     */
+    private function replaceNamedCaptures(string $route): string
+    {
+        $normalized = '';
+        $length = strlen($route);
+        $offset = 0;
+
+        while ($offset < $length) {
+            $start = strpos($route, '(?P<', $offset);
+            if ($start === false) {
+                $normalized .= substr($route, $offset);
+
+                break;
+            }
+
+            $normalized .= substr($route, $offset, $start - $offset);
+            $nameEnd = strpos($route, '>', $start + 4);
+            if ($nameEnd === false) {
+                $normalized .= substr($route, $start);
+
+                break;
+            }
+
+            $depth = 0;
+            $cursor = $start;
+            $closed = false;
+            while ($cursor < $length) {
+                $char = $route[$cursor];
+                if ($char === '(') {
+                    $depth++;
+                } elseif ($char === ')') {
+                    $depth--;
+                    if ($depth === 0) {
+                        $normalized .= '*';
+                        $offset = $cursor + 1;
+                        $closed = true;
+
+                        break;
+                    }
+                }
+                $cursor++;
+            }
+
+            if (! $closed) {
+                $normalized .= substr($route, $start);
+
+                break;
+            }
         }
 
         return $normalized;

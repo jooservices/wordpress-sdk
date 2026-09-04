@@ -26,7 +26,8 @@
 `widget-types` (+ `encode`/`render`), `sidebars`, all
 `wp-site-health/v1` tests, revisions and autosaves for the shared post-backed
 allowlist (`posts`, `pages`, `blocks`, `templates`, `template-parts`,
-`navigation`, `menu-items`), block/pattern directories, registered
+`navigation`, `menu-items`; revisions also include `global-styles`), block/pattern
+directories, registered
 patterns/categories, pattern category terms, font families/faces/collections,
 icons/collections, abilities, block-editor support routes, view config, batch
 v1, and oEmbed.

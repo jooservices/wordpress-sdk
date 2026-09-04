@@ -5,7 +5,7 @@
 'documentation':
   - changed-files:
     - any-glob-to-any-file:
-      - '**.md'
+      - '**/*.md'
       - 'docs/**/*'
 
 'dependencies':
@@ -27,8 +27,8 @@
 'configuration':
   - changed-files:
     - any-glob-to-any-file:
-      - '**.xml'
-      - '**.neon'
+      - '**/*.xml'
+      - '**/*.neon'
       - 'pint.json'
 
 'source':

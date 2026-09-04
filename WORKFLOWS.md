@@ -27,12 +27,12 @@ containers via the repository Docker Compose wrapper
 | --- | --- | --- |
 | `codeql.yml` | Push/PR on `master` or `develop`; weekly | CodeQL for GitHub Actions → publish security results |
 | `commitlint.yml` | PR opened, edited, synchronized, reopened | Validate every PR commit against `.github/commitlint.config.mjs` |
-| `semantic-pr.yml` | PR opened, edited, synchronized | Validate PR title; skipped for Dependabot |
+| `semantic-pr.yml` | PR opened, edited, synchronized, reopened | Validate PR title; skipped for Dependabot |
 | `pr-labeler.yml` | PR opened, synchronized, reopened | Apply labels from `.github/labeler.yml` |
 | `link-check.yml` | Monday 04:00 UTC; manual | Lychee Markdown link check |
 | `scorecard.yml` | Push to `master`; Monday 00:00 UTC; manual | OpenSSF Scorecard → SARIF upload |
 | `stale.yml` | Daily 01:00 UTC; manual | Stale after 60 days; close 14 days later |
-| `workflow-audit.yml` | `.github/**` changes; weekly; manual | Actionlint + Zizmor |
+| `workflow-audit.yml` | Push/PR on `master` or `develop` when `.github/**` changes; Monday 03:00 UTC; manual | Actionlint + Zizmor |
 
 ## Branch and release flow
 

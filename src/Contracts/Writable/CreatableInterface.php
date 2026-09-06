@@ -10,9 +10,9 @@ namespace JOOservices\WordPress\Sdk\Contracts\Writable;
 interface CreatableInterface
 {
     /**
-     * @param array<string, mixed>|PayloadInterface $payload
+     * @param array<string, mixed> $payload
      *
      * @return TDto
      */
-    public function create(array|PayloadInterface $payload): object;
+    public function create(array $payload): object;
 }

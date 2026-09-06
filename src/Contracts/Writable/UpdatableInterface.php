@@ -10,9 +10,9 @@ namespace JOOservices\WordPress\Sdk\Contracts\Writable;
 interface UpdatableInterface
 {
     /**
-     * @param array<string, mixed>|PayloadInterface $payload
+     * @param array<string, mixed> $payload
      *
      * @return TDto
      */
-    public function update(int $id, array|PayloadInterface $payload): object;
+    public function update(int $id, array $payload): object;
 }

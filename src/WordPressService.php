@@ -451,18 +451,23 @@ final class WordPressService
     /**
      * Typed CRUD for a `show_in_rest` custom taxonomy (or categories/tags
      * by rest_base). Bare slugs resolve under `wp/v2/`.
+     *
+     * @param bool $hierarchical whether the taxonomy is hierarchical;
+     *                           hierarchical taxonomies paginate via
+     *                           `page`/`per_page` and ignore `offset`
      */
-    public function terms(string $restBase): TermsService
+    public function terms(string $restBase, bool $hierarchical = false): TermsService
     {
         $path = (new RestPath())->collection($restBase);
 
         /** @var TermsService */
-        return $this->services['terms:' . $path] ??= new TermsService(
+        return $this->services['terms:' . $path . ($hierarchical ? ':hierarchical' : '')] ??= new TermsService(
             $this->client,
             $this->requestBuilder,
             $this->decoder,
             $this->errorMapper,
             $path,
+            $hierarchical,
         );
     }
 

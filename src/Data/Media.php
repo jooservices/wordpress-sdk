@@ -18,7 +18,7 @@ final class Media extends Dto
     public function __construct(
         public readonly int $id = 0,
         public readonly string $date = '',
-        public readonly string $date_gmt = '',
+        public readonly ?string $date_gmt = null,
         public readonly ?RenderedContent $guid = null,
         public readonly string $modified = '',
         public readonly string $modified_gmt = '',

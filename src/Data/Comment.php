@@ -21,7 +21,7 @@ final class Comment extends Dto
         public readonly int $parent = 0,
         public readonly int $author = 0,
         public readonly string $author_name = '',
-        public readonly string $author_email = '',
+        public readonly ?string $author_email = null,
         public readonly string $author_url = '',
         public readonly ?string $author_ip = null,
         public readonly ?string $author_user_agent = null,

@@ -21,7 +21,6 @@ final class ListTermsQuery extends AbstractListQuery
         public readonly ?array $slug = null,
         ?int $page = null,
         ?int $perPage = null,
-        ?int $offset = null,
         ?string $search = null,
         RestContext|string|null $context = null,
         ?string $orderby = null,
@@ -30,11 +29,11 @@ final class ListTermsQuery extends AbstractListQuery
         ?array $exclude = null,
         ?string $fields = null,
         bool $embed = false,
+        ?int $offset = null,
     ) {
         parent::__construct(
             page: $page,
             perPage: $perPage,
-            offset: $offset,
             search: $search,
             context: $context,
             orderby: $orderby,
@@ -43,6 +42,7 @@ final class ListTermsQuery extends AbstractListQuery
             exclude: $exclude,
             fields: $fields,
             embed: $embed,
+            offset: $offset,
         );
     }
 

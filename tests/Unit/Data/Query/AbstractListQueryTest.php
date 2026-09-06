@@ -179,4 +179,36 @@ final class AbstractListQueryTest extends TestCase
             'status' => 'publish',
         ], $query->toQuery());
     }
+
+    public function testOffsetPositionPreservesLegacyPositionalArguments(): void
+    {
+        $query = new ListUsersQuery(
+            null, // roles
+            null, // capabilities
+            null, // hasPublishedPosts
+            null, // who
+            null, // slug
+            2, // page
+            10, // perPage
+            'jane', // search
+            'edit', // context
+            'name', // orderby
+            'asc', // order
+            null, // include
+            null, // exclude
+            null, // fields
+            false, // embed
+            5, // offset (appended, keeps older positions intact)
+        );
+
+        self::assertSame([
+            'page' => 2,
+            'per_page' => 10,
+            'offset' => 5,
+            'search' => 'jane',
+            'context' => 'edit',
+            'orderby' => 'name',
+            'order' => 'asc',
+        ], $query->toQuery());
+    }
 }

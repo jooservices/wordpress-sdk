@@ -42,7 +42,6 @@ final class ListPostsQuery extends AbstractListQuery
         public readonly ?string $format = null,
         ?int $page = null,
         ?int $perPage = null,
-        ?int $offset = null,
         ?string $search = null,
         RestContext|string|null $context = null,
         ?string $orderby = null,
@@ -51,11 +50,11 @@ final class ListPostsQuery extends AbstractListQuery
         ?array $exclude = null,
         ?string $fields = null,
         bool $embed = false,
+        ?int $offset = null,
     ) {
         parent::__construct(
             page: $page,
             perPage: $perPage,
-            offset: $offset,
             search: $search,
             context: $context,
             orderby: $orderby,
@@ -64,6 +63,7 @@ final class ListPostsQuery extends AbstractListQuery
             exclude: $exclude,
             fields: $fields,
             embed: $embed,
+            offset: $offset,
         );
     }
 

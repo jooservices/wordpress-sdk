@@ -45,4 +45,24 @@ final class PostPayloadTest extends TestCase
         $term = new TermPayload(name: $name, parent: 2);
         self::assertSame(['name' => $name, 'parent' => 2], $term->toPayload());
     }
+
+    public function testEmptyCategoriesAndTagsArePreserved(): void
+    {
+        $title = $this->faker->sentence(2);
+        $payload = new PostPayload(title: $title, categories: [], tags: []);
+
+        self::assertSame([
+            'title' => $title,
+            'categories' => [],
+            'tags' => [],
+        ], $payload->toPayload());
+    }
+
+    public function testNullCategoriesAndTagsAreOmitted(): void
+    {
+        $title = $this->faker->sentence(2);
+        $payload = new PostPayload(title: $title);
+
+        self::assertSame(['title' => $title], $payload->toPayload());
+    }
 }

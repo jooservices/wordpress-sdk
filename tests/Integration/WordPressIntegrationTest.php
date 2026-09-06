@@ -191,54 +191,61 @@ final class WordPressIntegrationTest extends TestCase
             unlink($image);
         }
     }
-
     public function testUsersRevisionsCustomResourceAndApplicationPasswordUpdate(): void
     {
-        $description = $this->faker->sentence();
-        $me = $this->wordPress->users()->updateMe(['description' => $description]);
-        self::assertSame($description, $me->description);
-
-        $title = $this->faker->sentence(4);
-        $post = $this->wordPress->posts()->create([
-            'title' => $title,
-            'content' => $this->faker->paragraph(),
-            'status' => 'draft',
-        ]);
+        $me = $this->wordPress->users()->me();
+        $originalDescription = $me->description;
 
         try {
-            $this->wordPress->posts()->update($post->id, ['title' => $this->faker->sentence(5)]);
-            $revisions = $this->wordPress->posts()->revisions($post->id)->list();
-            self::assertNotEmpty($revisions);
+            $description = $this->faker->sentence();
+            $updated = $this->wordPress->users()->updateMe(['description' => $description]);
+            self::assertSame($description, $updated->description);
 
-            $loaded = $this->wordPress->resource('posts')->get($post->id, ['context' => 'edit']);
-            self::assertSame($post->id, $loaded->id);
-
-            $types = $this->wordPress->custom()->get('wp/v2/types');
-            self::assertArrayHasKey('post', $types);
-
-            $category = $this->wordPress->terms('categories')->create([
-                'name' => $this->faker->unique()->words(2, true),
+            $title = $this->faker->sentence(4);
+            $post = $this->wordPress->posts()->create([
+                'title' => $title,
+                'content' => $this->faker->paragraph(),
+                'status' => 'draft',
             ]);
+
             try {
-                self::assertGreaterThan(0, $category->id);
+                $this->wordPress->posts()->update($post->id, ['title' => $this->faker->sentence(5)]);
+                $revisions = $this->wordPress->posts()->revisions($post->id)->list();
+                self::assertNotEmpty($revisions);
+
+                $loaded = $this->wordPress->resource('posts')->get($post->id, ['context' => 'edit']);
+                self::assertSame($post->id, $loaded->id);
+
+                $types = $this->wordPress->custom()->get('wp/v2/types');
+                self::assertArrayHasKey('post', $types);
+
+                $category = $this->wordPress->terms('categories')->create([
+                    'name' => $this->faker->unique()->words(2, true),
+                ]);
+                try {
+                    self::assertGreaterThan(0, $category->id);
+                } finally {
+                    $this->wordPress->terms('categories')->delete($category->id, true);
+                }
+
+                $families = $this->wordPress->fonts()->families();
+                self::assertIsArray($families);
+
+                $created = $this->wordPress->applicationPasswords()->create('me', [
+                    'name' => 'sdk-e2e-' . $this->faker->unique()->lexify('????'),
+                ]);
+                self::assertNotSame('', $created->uuid);
+
+                $renamed = $this->wordPress->applicationPasswords()->update('me', $created->uuid, [
+                    'name' => 'sdk-e2e-renamed',
+                ]);
+                self::assertSame('sdk-e2e-renamed', $renamed->name);
+                $this->wordPress->applicationPasswords()->delete('me', $created->uuid);
             } finally {
-                $this->wordPress->terms('categories')->delete($category->id, true);
+                $this->wordPress->posts()->delete($post->id, true);
             }
-
-            $families = $this->wordPress->fonts()->families();
-            self::assertIsArray($families);
-
-            $created = $this->wordPress->applicationPasswords()->create('me', [
-                'name' => 'sdk-e2e-' . $this->faker->unique()->lexify('????'),
-            ]);
-            self::assertNotSame('', $created->uuid);
-            $renamed = $this->wordPress->applicationPasswords()->update('me', $created->uuid, [
-                'name' => 'sdk-e2e-renamed',
-            ]);
-            self::assertSame('sdk-e2e-renamed', $renamed->name);
-            $this->wordPress->applicationPasswords()->delete('me', $created->uuid);
         } finally {
-            $this->wordPress->posts()->delete($post->id, true);
+            $this->wordPress->users()->updateMe(['description' => $originalDescription]);
         }
     }
 }

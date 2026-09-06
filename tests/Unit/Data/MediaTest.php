@@ -28,4 +28,11 @@ final class MediaTest extends TestCase
         self::assertSame('open', $media->comment_status);
         self::assertSame(['camera' => 'x'], $media->meta);
     }
+
+    public function testHydratesNullDateGmt(): void
+    {
+        $media = Media::from(['date_gmt' => null]);
+
+        self::assertNull($media->date_gmt);
+    }
 }

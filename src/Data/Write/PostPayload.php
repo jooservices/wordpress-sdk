@@ -45,11 +45,14 @@ final class PostPayload extends Dto implements PayloadInterface
     ) {}
 
     /**
+     * Empty `categories`/`tags` arrays are kept so the API clears term
+     * assignments; every other empty value is omitted as before.
+     *
      * @return array<string, mixed>
      */
     public function toPayload(): array
     {
-        return $this->omitEmpty([
+        $payload = $this->omitEmpty([
             'title' => $this->title,
             'content' => $this->content,
             'excerpt' => $this->excerpt,
@@ -70,5 +73,15 @@ final class PostPayload extends Dto implements PayloadInterface
             'tags' => $this->tags,
             'meta' => $this->meta,
         ]);
+
+        if ($this->categories === []) {
+            $payload['categories'] = [];
+        }
+
+        if ($this->tags === []) {
+            $payload['tags'] = [];
+        }
+
+        return $payload;
     }
 }

@@ -19,7 +19,7 @@ use Traversable;
  *
  * @implements IteratorAggregate<int, TDto>
  */
-final class PaginatedCollection implements IteratorAggregate, Countable
+class PaginatedCollection implements IteratorAggregate, Countable
 {
     /**
      * @param list<TDto> $items

@@ -61,9 +61,20 @@ final class UsersServiceTest extends TestCase
         $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => 'Admin']]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/users/me*', $sequence);
 
-        $deleted = $this->wordPress()->users()->deleteMe(force: true, reassign: 2);
+        $deleted = $this->wordPress()->users()->deleteMe(reassign: 2);
 
         self::assertSame(1, $deleted->id);
         $this->assertQuery($this->lastRequest(), ['force' => 'true', 'reassign' => 2]);
+    }
+
+    public function testDeleteMeDefaultsReassignToFalse(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => 'Admin']]));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/users/me*', $sequence);
+
+        $this->wordPress()->users()->deleteMe();
+
+        $this->assertQuery($this->lastRequest(), ['force' => 'true', 'reassign' => 'false']);
     }
 }

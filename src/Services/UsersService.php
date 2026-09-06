@@ -42,22 +42,22 @@ final class UsersService extends AbstractCrudService
         );
     }
 
-    public function deleteMe(bool $force = false, ?int $reassign = null): User
+    /**
+     * Deletes the authenticated user. WordPress always requires
+     * `force=true`; a `null` reassign target is sent as `reassign=false`.
+     */
+    public function deleteMe(?int $reassign = null): User
     {
-        $query = [];
-        if ($force) {
-            $query['force'] = 'true';
-        }
-
-        if ($reassign !== null) {
-            $query['reassign'] = $reassign;
-        }
-
         /** @var User */
         return $this->deleteAndDecode(
             Endpoint::USERS_ME->path(),
             User::class,
-            $query === [] ? [] : ['query' => $query],
+            [
+                'query' => [
+                    'force' => 'true',
+                    'reassign' => $reassign ?? 'false',
+                ],
+            ],
         );
     }
 

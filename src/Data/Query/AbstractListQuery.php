@@ -28,7 +28,6 @@ abstract class AbstractListQuery extends Dto implements QueryParametersInterface
     public function __construct(
         public readonly ?int $page = null,
         public readonly ?int $perPage = null,
-        public readonly ?int $offset = null,
         public readonly ?string $search = null,
         public readonly RestContext|string|null $context = null,
         public readonly ?string $orderby = null,
@@ -37,6 +36,7 @@ abstract class AbstractListQuery extends Dto implements QueryParametersInterface
         public readonly ?array $exclude = null,
         public readonly ?string $fields = null,
         public readonly bool $embed = false,
+        public readonly ?int $offset = null,
     ) {}
 
     /**

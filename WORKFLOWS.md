@@ -9,7 +9,7 @@ containers via the repository Docker Compose wrapper
 ## Pull request checks
 
 - `Validate`
-- `Lint (Pint)` and `Lint (PHPStan)`
+- `Lint (Pint)`, `Lint (PHPCS)`, `Lint (PHPStan)`, `Lint (PHPMD)`, and `Lint (PHP-CS-Fixer)`
 - `Unit coverage` with the 90% aggregate and zero-covered symbol gates
 - `Clean consumer`
 - `WordPress E2E`
@@ -50,7 +50,8 @@ the exact operator procedure.
 ## Branch protection
 
 Both `master` and `develop` require pull requests with these status checks:
-`Validate`, `Lint (Pint)`, `Lint (PHPStan)`, the three `Security (…)` legs,
+`Validate`, `Lint (Pint)`, `Lint (PHPCS)`, `Lint (PHPStan)`, `Lint (PHPMD)`,
+`Lint (PHP-CS-Fixer)`, the three `Security (…)` legs,
 `Unit coverage`, `Clean consumer`, `WordPress E2E`, `Validate commit messages`,
 `Validate PR title`, and `Analyze GitHub Actions`. Strict mode requires the
 branch to be up to date. Force pushes and deletions are denied. Merged head

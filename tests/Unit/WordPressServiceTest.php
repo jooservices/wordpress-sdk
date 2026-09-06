@@ -12,6 +12,7 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionProperty;
 
 final class WordPressServiceTest extends TestCase
 {
@@ -87,7 +88,9 @@ final class WordPressServiceTest extends TestCase
 
         $builder = $wordPress->posts()->builder();
 
-        self::assertSame($wordPress->media(), $wordPress->media());
+        $mediaService = (new ReflectionProperty($builder, 'mediaService'))->getValue($builder);
+
+        self::assertSame($wordPress->media(), $mediaService);
     }
 
     public function testContentBuilderIsWiredWithMediaService(): void

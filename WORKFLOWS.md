@@ -9,7 +9,7 @@ containers via the repository Docker Compose wrapper
 ## Pull request checks
 
 - `Validate`
-- `Lint (Pint)` and `Lint (PHPStan)`
+- `Lint (Pint)`, `Lint (PHPCS)`, `Lint (PHPStan)`, `Lint (PHPMD)`, and `Lint (PHP-CS-Fixer)`
 - `Unit coverage` with the 90% aggregate and zero-covered symbol gates
 - `Clean consumer`
 - `WordPress E2E`

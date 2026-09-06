@@ -31,7 +31,7 @@ make test      # phpunit Unit suite
 make clean-consumer
 make integration
 make ci        # lint + coverage + audit
-make hooks-install # opt-in; never runs during Composer install
+make hooks-install # opt-in; runs project hooks through the Docker PHP wrapper
 ```
 
 ## Quality gates

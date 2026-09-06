@@ -9,6 +9,7 @@ use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
 use JOOservices\WordPress\Sdk\Contracts\Readable\GettableInterface;
 use JOOservices\WordPress\Sdk\Contracts\Writable\CreatableInterface;
 use JOOservices\WordPress\Sdk\Contracts\Writable\DeletableInterface;
+use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Contracts\Writable\UpdatableInterface;
 
 /**
@@ -43,23 +44,23 @@ abstract class AbstractCrudService extends AbstractCollectionService implements
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param array<string, mixed>|PayloadInterface $payload
      *
      * @return TDto
      */
-    public function create(array $payload): object
+    public function create(array|PayloadInterface $payload): object
     {
-        return $this->createItem($this->listPath(), $payload, $this->dtoClass());
+        return $this->createItem($this->listPath(), $this->payloadArray($payload), $this->dtoClass());
     }
 
     /**
-     * @param array<string, mixed> $payload
+     * @param array<string, mixed>|PayloadInterface $payload
      *
      * @return TDto
      */
-    public function update(int $id, array $payload): object
+    public function update(int $id, array|PayloadInterface $payload): object
     {
-        return $this->updateItem($this->itemPath($id), $payload, $this->dtoClass());
+        return $this->updateItem($this->itemPath($id), $this->payloadArray($payload), $this->dtoClass());
     }
 
     /**

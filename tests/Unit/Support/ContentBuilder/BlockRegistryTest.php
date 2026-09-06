@@ -25,7 +25,7 @@ use JOOservices\WordPress\Sdk\Support\ContentBuilder\GenericBlock;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use InvalidArgumentException;
 
-final class BlocksTest extends TestCase
+final class BlockRegistryTest extends TestCase
 {
     public function testDefaultRegistryRegistersCoreBlocks(): void
     {

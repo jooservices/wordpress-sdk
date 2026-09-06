@@ -98,7 +98,7 @@ final class PostBuilderTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        $builder->content(static fn(ContentBuilder $builder): string => 'not a builder');
+        $builder->content(static fn(ContentBuilder $builder): string => 'not a builder'); // @phpstan-ignore argument.type (runtime guard)
     }
 
     public function testStatusCanBeOverridden(): void

@@ -10,13 +10,15 @@ first access and cached per facade instance.
 | `posts()` | `Post`, `PaginatedCollection<Post>`, `PostBuilder` | full CRUD |
 | `pages()` | `Page`, `PaginatedCollection<Page>` | full CRUD |
 | `comments()` | `Comment`, `PaginatedCollection<Comment>` | full CRUD |
-| `users()` | `User`, `PaginatedCollection<User>` | full CRUD + `me()` |
+| `users()` | `User`, `PaginatedCollection<User>` | full CRUD + `me()` / `updateMe()` / `deleteMe()` |
 | `media()` | `Media`, `PaginatedCollection<Media>` | CRUD + `upload()` |
 | `categories()` / `tags()` | `Term`, `PaginatedCollection<Term>` | full CRUD |
 | `search()` | `PaginatedCollection<SearchResult>` | read-only |
 | `taxonomies()` / `postTypes()` / `statuses()` | keyed DTOs | get by slug, read-only |
 | `settings()` | `Settings` | get/update |
-| `applicationPasswords()` | `ApplicationPassword` | scoped by user id |
+| `applicationPasswords()` | `ApplicationPassword` | scoped by user id; `update()` renames |
+| `resource($restBase)` | `Post` | custom post types (`show_in_rest`) |
+| `terms($restBase, $hierarchical = false)` | `Term` | custom taxonomies (`show_in_rest`); hierarchical taxonomies drop `offset` and paginate via `page`/`per_page` |
 | `discovery()` | raw arrays | index/routes/schema |
 | `custom()` | raw arrays | arbitrary relative paths |
 | `revisions()` / `autosaves()` | raw arrays | shared post-backed allowlist via `resource()` |
@@ -44,8 +46,9 @@ $posts = $wordpress->posts()->list(new ListPostsQuery(
 ));
 ```
 
-All query DTOs share: `page`, `perPage`, `search`, `context`, `orderby`,
-`order`, `include`, `exclude`, `fields` (→ `_fields`), `embed` (→ `_embed`).
+All query DTOs share: `page`, `perPage`, `offset`, `search`, `context`,
+`orderby`, `order`, `include`, `exclude`, `fields` (→ `_fields`), `embed` (→
+`_embed`). Hierarchical taxonomies ignore `offset`.
 
 ## Raw custom endpoints
 

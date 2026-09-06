@@ -12,7 +12,7 @@ use JOOservices\Dto\Core\Dto;
 final class SearchResult extends Dto
 {
     public function __construct(
-        public readonly int $id = 0,
+        public readonly int|string $id = 0,
         public readonly string $title = '',
         public readonly string $url = '',
         public readonly string $type = '',

@@ -8,6 +8,7 @@ use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Data\Page;
 use JOOservices\WordPress\Sdk\Data\Post;
+use JOOservices\WordPress\Sdk\Data\Query\ListPostsQuery;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
@@ -33,7 +34,7 @@ final class PostsServiceTest extends TestCase
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/posts*', $sequence);
 
-        $posts = $this->wordPress->posts()->list(new \JOOservices\WordPress\Sdk\Data\Query\ListPostsQuery(perPage: 2));
+        $posts = $this->wordPress->posts()->list(new ListPostsQuery(perPage: 2));
 
         self::assertCount(2, $posts);
         self::assertSame(10, $posts->total);
@@ -65,12 +66,13 @@ final class PostsServiceTest extends TestCase
         $sequence->push(TestResponse::json(['id' => 9, 'status' => 'publish'], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
-        $post = $this->wordPress->posts()->create(['title' => 'New', 'status' => 'publish']);
+        $title = $this->faker->sentence(3);
+        $post = $this->wordPress->posts()->create(['title' => $title, 'status' => 'publish']);
 
         self::assertSame(9, $post->id);
         $request = $this->lastRequest();
         self::assertSame('POST', $request->getMethod());
-        $this->assertJsonBody($request, ['title' => 'New', 'status' => 'publish']);
+        $this->assertJsonBody($request, ['title' => $title, 'status' => 'publish']);
     }
 
     public function testUpdatePostsToItemPath(): void
@@ -130,5 +132,47 @@ final class PostsServiceTest extends TestCase
 
         self::assertSame('Jane', $comment->author_name);
         self::assertSame('/wp-json/wp/v2/comments/1', $this->lastRequest()->getUri()->getPath());
+    }
+
+    public function testRevisionsAndAutosavesNestUnderPosts(): void
+    {
+        $list = new TestResponseSequence();
+        $list->push(TestResponse::json([['id' => 2]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/posts/9/revisions*', $list);
+
+        $revisions = $this->wordPress->posts()->revisions(9)->list();
+
+        self::assertSame([['id' => 2]], $revisions);
+        self::assertSame('/wp-json/wp/v2/posts/9/revisions', $this->lastRequest()->getUri()->getPath());
+
+        $autosaves = new TestResponseSequence();
+        $autosaves->push(TestResponse::json(['id' => 3], 201));
+        $this->httpFakes()->respond('POST', '*wp/v2/posts/9/autosaves*', $autosaves);
+
+        $created = $this->wordPress->posts()->autosaves(9)->create(['title' => $this->faker->sentence(2)]);
+
+        self::assertSame(['id' => 3], $created);
+        self::assertSame('/wp-json/wp/v2/posts/9/autosaves', $this->lastRequest()->getUri()->getPath());
+    }
+
+    public function testPagesRevisionsAndAutosaves(): void
+    {
+        $list = new TestResponseSequence();
+        $list->push(TestResponse::json([['id' => 4]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/pages/3/revisions*', $list);
+
+        self::assertSame([['id' => 4]], $this->wordPress->pages()->revisions(3)->list());
+
+        $autosaves = new TestResponseSequence();
+        $autosaves->push(TestResponse::json([['id' => 5]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/pages/3/autosaves*', $autosaves);
+
+        self::assertSame([['id' => 5]], $this->wordPress->autosaves()->pages(3)->list());
+
+        $postAutosaves = new TestResponseSequence();
+        $postAutosaves->push(TestResponse::json([['id' => 6]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/posts/9/autosaves*', $postAutosaves);
+
+        self::assertSame([['id' => 6]], $this->wordPress->autosaves()->posts(9)->list());
     }
 }

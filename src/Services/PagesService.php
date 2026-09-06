@@ -12,6 +12,22 @@ use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
  */
 final class PagesService extends AbstractCrudService
 {
+    public function revisions(int $id): RevisionResourceService
+    {
+        return new RevisionResourceService(
+            new RevisionsService($this->client, $this->requestBuilder, $this->decoder, $this->errorMapper),
+            Endpoint::PAGES->withChild($id, 'revisions'),
+        );
+    }
+
+    public function autosaves(int $id): AutosaveResourceService
+    {
+        return new AutosaveResourceService(
+            new AutosavesService($this->client, $this->requestBuilder, $this->decoder, $this->errorMapper),
+            Endpoint::PAGES->withChild($id, 'autosaves'),
+        );
+    }
+
     protected function dtoClass(): string
     {
         return Page::class;

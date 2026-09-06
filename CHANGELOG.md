@@ -7,6 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `WordPressService::fromClient()` for a pre-built PSR-18 client (bearer/JWT).
+- `resource()` / `terms()` for `show_in_rest` custom post types and taxonomies.
+- Nested `posts()->revisions()` / `autosaves()` (and the same on pages).
+- `UsersService::updateMe()` / `deleteMe()`.
+- `ApplicationPasswordsService::update()` (rename; secret is not rotated).
+- Typed write payloads (`PostPayload`, `PagePayload`, `CommentPayload`,
+  `UserPayload`, `TermPayload`, `ApplicationPasswordPayload`) accepted
+  alongside arrays.
+- Query DTO coverage for `after`/`before`/`offset`/`slug` and related filters.
+- REST enums (`RestContext`, `PostStatus`, `OrderDirection`, `OpenClosed`,
+  `TaxRelation`).
+- `ContentBuilder::code()` / `shortcode()`.
+- Sonar, Codecov, OSV, and a CI `Coverage upload` leaf job.
+
+### Changed
+
+- `MediaService::create()` rejects JSON POSTs; use `upload()`.
+- README identity, badges, and WordPress E2E image pin `wordpress:7.1.0`.
+
 ## [4.0.0] - 2026-09-04
 
 ### Added

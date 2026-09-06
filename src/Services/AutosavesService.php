@@ -11,6 +11,21 @@ use JOOservices\WordPress\Sdk\Support\RestPath;
 /** Autosaves for all core post-backed REST resources. */
 final class AutosavesService extends AbstractService
 {
+    public function posts(int $postId): AutosaveResourceService
+    {
+        return $this->resource('posts', $postId);
+    }
+
+    public function pages(int $pageId): AutosaveResourceService
+    {
+        return $this->resource('pages', $pageId);
+    }
+
+    public function blocks(int $blockId): AutosaveResourceService
+    {
+        return $this->resource('blocks', $blockId);
+    }
+
     public function resource(string $resource, int|string $parentId): AutosaveResourceService
     {
         $resource = (new RestPath())->normalize($resource);

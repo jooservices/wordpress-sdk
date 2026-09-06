@@ -11,9 +11,10 @@ containers via the repository Docker Compose wrapper
 - `Validate`
 - `Lint (Pint)`, `Lint (PHPCS)`, `Lint (PHPStan)`, `Lint (PHPMD)`, and `Lint (PHP-CS-Fixer)`
 - `Unit coverage` with the 90% aggregate and zero-covered symbol gates
+- `Coverage upload` (Codecov + Sonar)
 - `Clean consumer`
 - `WordPress E2E`
-- `Security (Dependencies)`, including Composer audit and dependency review
+- `Security (Dependencies)`, including Composer audit, OSV Scanner, and dependency review
 - `Security (Secrets)` with Gitleaks
 - `Security (SAST)` with Semgrep
 - Commitlint, semantic PR title, CodeQL, PR labeler, and workflow audit when applicable
@@ -52,7 +53,7 @@ the exact operator procedure.
 Both `master` and `develop` require pull requests with these status checks:
 `Validate`, `Lint (Pint)`, `Lint (PHPCS)`, `Lint (PHPStan)`, `Lint (PHPMD)`,
 `Lint (PHP-CS-Fixer)`, the three `Security (…)` legs,
-`Unit coverage`, `Clean consumer`, `WordPress E2E`, `Validate commit messages`,
+`Unit coverage`, `Coverage upload`, `Clean consumer`, `WordPress E2E`, `Validate commit messages`,
 `Validate PR title`, and `Analyze GitHub Actions`. Strict mode requires the
 branch to be up to date. Force pushes and deletions are denied. Merged head
 branches are deleted automatically.
@@ -64,5 +65,4 @@ branches are deleted automatically.
   `jooservices/workflows`.
 - Secret scanning has two layers: GitHub Secret Scanning and Push Protection
   at GitHub, plus Gitleaks OSS in the pull-request security matrix.
-- Codecov and Sonar badges/uploads are omitted until those integrations exist
-  for this repository.
+- Codecov and Sonar run in the `Coverage upload` leaf job.

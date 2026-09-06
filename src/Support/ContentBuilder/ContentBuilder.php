@@ -8,6 +8,7 @@ use Closure;
 use JOOservices\WordPress\Sdk\Services\MediaService;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Button;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Buttons;
+use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Code;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Column;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Columns;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Group;
@@ -19,6 +20,7 @@ use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Quote;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\ReadMore;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\ReadMoreButton;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Separator;
+use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Shortcode;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Raw\HtmlBlock;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Contracts\BlockInterface;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Parser\BlockParser;
@@ -148,9 +150,28 @@ final class ContentBuilder
         return $this->addBlock(new PageBreak($attributes));
     }
 
-    public function separator(): self
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function separator(array $attributes = []): self
     {
-        return $this->addBlock(new Separator());
+        return $this->addBlock(new Separator($attributes));
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function code(string $code, array $attributes = []): self
+    {
+        return $this->addBlock(new Code($code, $attributes));
+    }
+
+    /**
+     * @param array<string, mixed> $attributes
+     */
+    public function shortcode(string $shortcode, array $attributes = []): self
+    {
+        return $this->addBlock(new Shortcode($shortcode, $attributes));
     }
 
     /**
@@ -263,6 +284,7 @@ final class ContentBuilder
     }
 
     /**
+     * @param Closure(ContentBuilder): void $builderFunc
      * @param array<string, mixed> $attributes
      */
     public function group(Closure $builderFunc, array $attributes = []): self

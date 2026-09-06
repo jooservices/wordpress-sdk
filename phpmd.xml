@@ -5,7 +5,40 @@
          xsi:schemaLocation="http://pmd.sf.net/ruleset/1.0.0 http://pmd.sf.net/ruleset_xml_schema.xsd"
          xsi:noNamespaceSchemaLocation="http://pmd.sf.net/ruleset_xml_schema.xsd">
 
-    <description>Targeted PHPMD rule for unused code; architecture-specific design rules remain covered by PHPStan.</description>
+    <description>PHPMD rulesets aligned with jooservices/dto. Facade method count is excluded.</description>
 
+    <rule ref="rulesets/codesize.xml">
+        <exclude name="TooManyPublicMethods"/>
+        <exclude name="TooManyMethods"/>
+        <exclude name="ExcessivePublicCount"/>
+        <exclude name="ExcessiveClassLength"/>
+        <exclude name="ExcessiveParameterList"/>
+        <exclude name="ExcessiveClassComplexity"/>
+        <exclude name="CyclomaticComplexity"/>
+    </rule>
+    <rule ref="rulesets/design.xml">
+        <exclude name="CouplingBetweenObjects"/>
+        <exclude name="NumberOfChildren"/>
+    </rule>
     <rule ref="rulesets/unusedcode.xml"/>
+    <rule ref="rulesets/naming.xml">
+        <exclude name="ShortVariable"/>
+        <exclude name="LongVariable"/>
+        <exclude name="ShortMethodName"/>
+    </rule>
+    <rule ref="rulesets/cleancode.xml">
+        <exclude name="BooleanArgumentFlag"/>
+        <exclude name="ElseExpression"/>
+        <exclude name="StaticAccess"/>
+    </rule>
+    <rule ref="rulesets/design.xml/CouplingBetweenObjects">
+        <properties>
+            <property name="maximum" value="60"/>
+        </properties>
+    </rule>
+    <rule ref="rulesets/codesize.xml/ExcessiveParameterList">
+        <properties>
+            <property name="minimum" value="40"/>
+        </properties>
+    </rule>
 </ruleset>

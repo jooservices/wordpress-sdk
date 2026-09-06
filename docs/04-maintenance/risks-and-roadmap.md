@@ -24,7 +24,5 @@ a maintenance candidate for extraction — not an SDK feature.
 1. **Conditional requests** — ETag/Last-Modified helpers.
 2. **Typed revisions** — add a public `Revision` DTO if the cross-resource
    response schema becomes stable enough; raw scopes are already complete.
-3. **Typed payloads** — DTO-typed `create()`/`update()` payloads with
-   validation via `jooservices/dto` attributes.
-4. **Content builder** — per-block parser fidelity for custom registered
+3. **Content builder** — per-block parser fidelity for custom registered
    classes; container `tagName` handling on non-Group containers.

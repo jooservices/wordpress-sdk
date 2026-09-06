@@ -4,26 +4,41 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Data\Query;
 
+use JOOservices\WordPress\Sdk\Enums\OrderDirection;
+use JOOservices\WordPress\Sdk\Enums\RestContext;
+
 final class ListMediaQuery extends AbstractListQuery
 {
     /**
+     * @param list<int>|null $parentExclude
+     * @param list<int>|null $author
+     * @param list<int>|null $authorExclude
+     * @param list<string>|null $slug
      * @param list<int>|null $include
      * @param list<int>|null $exclude
      */
     public function __construct(
         public readonly ?int $parent = null,
+        public readonly ?array $parentExclude = null,
         public readonly ?string $mediaType = null,
         public readonly ?string $mimeType = null,
+        public readonly ?array $author = null,
+        public readonly ?array $authorExclude = null,
+        public readonly ?string $after = null,
+        public readonly ?string $before = null,
+        public readonly ?array $slug = null,
+        public readonly ?string $status = null,
         ?int $page = null,
         ?int $perPage = null,
         ?string $search = null,
-        ?string $context = null,
+        RestContext|string|null $context = null,
         ?string $orderby = null,
-        ?string $order = null,
+        OrderDirection|string|null $order = null,
         ?array $include = null,
         ?array $exclude = null,
         ?string $fields = null,
         bool $embed = false,
+        ?int $offset = null,
     ) {
         parent::__construct(
             page: $page,
@@ -36,6 +51,7 @@ final class ListMediaQuery extends AbstractListQuery
             exclude: $exclude,
             fields: $fields,
             embed: $embed,
+            offset: $offset,
         );
     }
 
@@ -46,8 +62,15 @@ final class ListMediaQuery extends AbstractListQuery
     {
         return [
             'parent' => $this->parent,
+            'parent_exclude' => $this->parentExclude,
             'media_type' => $this->mediaType,
             'mime_type' => $this->mimeType,
+            'author' => $this->author,
+            'author_exclude' => $this->authorExclude,
+            'after' => $this->after,
+            'before' => $this->before,
+            'slug' => $this->slug,
+            'status' => $this->status,
         ];
     }
 }

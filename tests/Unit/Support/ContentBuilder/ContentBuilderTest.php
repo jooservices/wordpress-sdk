@@ -59,6 +59,19 @@ final class ContentBuilderTest extends TestCase
         );
     }
 
+    public function testCodeAndShortcodeHelpers(): void
+    {
+        $code = $this->faker->word();
+        $builder = (new ContentBuilder())
+            ->code($code)
+            ->shortcode('[gallery]');
+
+        self::assertStringContainsString('wp:code', $builder->render());
+        self::assertStringContainsString($code, $builder->render());
+        self::assertStringContainsString('wp:shortcode', $builder->render());
+        self::assertStringContainsString('[gallery]', $builder->render());
+    }
+
     public function testQuoteWithCitation(): void
     {
         $builder = (new ContentBuilder())->quote('To be', 'Shakespeare');

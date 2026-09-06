@@ -17,7 +17,7 @@ use JOOservices\WordPress\Sdk\Exceptions\WordPressApiException;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use LogicException;
 
-final class ExceptionsTest extends TestCase
+final class WordPressApiExceptionTest extends TestCase
 {
     public function testBaseExceptionCarriesRawPayload(): void
     {

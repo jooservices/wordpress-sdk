@@ -69,7 +69,10 @@
         "lint:cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php --sequential",
         "lint:pint": "pint --test",
         "lint:phpstan": "phpstan analyse --no-progress --memory-limit=512M",
-        "lint:fix": "pint",
+        "lint:fix": [
+            "pint",
+            "@lint:cs:fix"
+        ],
         "test": "phpunit --testsuite=Unit",
         "test:integration": "phpunit --testsuite=Integration",
         "test:coverage": [

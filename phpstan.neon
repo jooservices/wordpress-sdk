@@ -1,5 +1,6 @@
 includes:
     - vendor/phpstan/phpstan-phpunit/extension.neon
+    - vendor/phpstan/phpstan-phpunit/rules.neon
 parameters:
     level: max
     paths:
@@ -7,3 +8,9 @@ parameters:
         - tests
     tmpDir: build/phpstan
     treatPhpDocTypesAsCertain: false
+    reportUnmatchedIgnoredErrors: true
+    checkMissingCallableSignature: true
+    checkUninitializedProperties: true
+    checkDynamicProperties: true
+    checkFunctionNameCase: true
+    checkInternalClassCaseSensitivity: true

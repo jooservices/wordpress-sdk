@@ -9,7 +9,7 @@ use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
-final class RawServicesTest extends TestCase
+final class RawEndpointServiceTest extends TestCase
 {
     private WordPressService $wordPress;
 
@@ -97,6 +97,23 @@ final class RawServicesTest extends TestCase
         $delete->push(TestResponse::json(['deleted' => true]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/plugins/akismet/akismet.php*', $delete);
         self::assertSame(['deleted' => true], $this->wordPress->plugins()->delete('akismet/akismet.php'));
+    }
+
+    public function testPluginsActivateAndDeactivate(): void
+    {
+        $activate = new TestResponseSequence();
+        $activate->push(TestResponse::json(['status' => 'active']));
+        $this->httpFakes()->respond('POST', '*wp/v2/plugins/akismet/akismet.php*', $activate);
+
+        self::assertSame(['status' => 'active'], $this->wordPress->plugins()->activate('akismet/akismet.php'));
+        $this->assertJsonBody($this->lastRequest(), ['status' => 'active']);
+
+        $deactivate = new TestResponseSequence();
+        $deactivate->push(TestResponse::json(['status' => 'inactive']));
+        $this->httpFakes()->respond('POST', '*wp/v2/plugins/akismet/akismet.php*', $deactivate);
+
+        self::assertSame(['status' => 'inactive'], $this->wordPress->plugins()->deactivate('akismet/akismet.php'));
+        $this->assertJsonBody($this->lastRequest(), ['status' => 'inactive']);
     }
 
     public function testThemesListAndGet(): void

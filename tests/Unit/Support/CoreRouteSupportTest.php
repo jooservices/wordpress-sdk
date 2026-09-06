@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace JOOservices\WordPress\Sdk\Tests\Unit\Services;
+namespace JOOservices\WordPress\Sdk\Tests\Unit\Support;
 
 use InvalidArgumentException;
 use JOOservices\Client\Testing\TestResponse;
@@ -11,7 +11,7 @@ use JOOservices\WordPress\Sdk\Support\CoreRouteSupport;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
-final class CoreApiServicesTest extends TestCase
+final class CoreRouteSupportTest extends TestCase
 {
     private WordPressService $wordPress;
 

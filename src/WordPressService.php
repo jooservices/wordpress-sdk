@@ -34,6 +34,7 @@ use JOOservices\WordPress\Sdk\Services\PatternsService;
 use JOOservices\WordPress\Sdk\Services\PluginsService;
 use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Services\PostTypesService;
+use JOOservices\WordPress\Sdk\Services\ResourceService;
 use JOOservices\WordPress\Sdk\Services\RevisionsService;
 use JOOservices\WordPress\Sdk\Services\SearchService;
 use JOOservices\WordPress\Sdk\Services\SettingsService;
@@ -42,6 +43,7 @@ use JOOservices\WordPress\Sdk\Services\SiteHealthService;
 use JOOservices\WordPress\Sdk\Services\StatusesService;
 use JOOservices\WordPress\Sdk\Services\TagsService;
 use JOOservices\WordPress\Sdk\Services\TaxonomiesService;
+use JOOservices\WordPress\Sdk\Services\TermsService;
 use JOOservices\WordPress\Sdk\Services\TemplatePartsService;
 use JOOservices\WordPress\Sdk\Services\TemplatesService;
 use JOOservices\WordPress\Sdk\Services\ThemesService;
@@ -51,6 +53,7 @@ use JOOservices\WordPress\Sdk\Services\UsersService;
 use JOOservices\WordPress\Sdk\Services\WidgetsService;
 use JOOservices\WordPress\Sdk\Services\WidgetTypesService;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\ContentBuilder;
+use JOOservices\WordPress\Sdk\Support\RestPath;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
@@ -159,13 +162,31 @@ final class WordPressService
 
     public static function fromConfig(Config $config): self
     {
+        return self::fromClient(
+            (new ClientFactory())->create($config),
+            logger: $config->logger,
+        );
+    }
+
+    /**
+     * Advanced entry point: inject a pre-built PSR-18 client (bearer, JWT,
+     * custom middleware) while the SDK still owns request building, decoding,
+     * and error mapping.
+     */
+    public static function fromClient(
+        ClientInterface $client,
+        ?RequestBuilder $requestBuilder = null,
+        ?ResponseDecoderInterface $decoder = null,
+        ?ErrorMapper $errorMapper = null,
+        ?LoggerInterface $logger = null,
+    ): self {
         $psr17 = new Psr17Factory();
 
         return new self(
-            (new ClientFactory())->create($config),
-            new RequestBuilder($psr17, $psr17, $psr17),
-            new ResponseDecoder($config->logger),
-            new ErrorMapper(),
+            $client,
+            $requestBuilder ?? new RequestBuilder($psr17, $psr17, $psr17),
+            $decoder ?? new ResponseDecoder($logger),
+            $errorMapper ?? new ErrorMapper(),
         );
     }
 
@@ -407,6 +428,47 @@ final class WordPressService
     {
         /** @var UtilityService */
         return $this->service('utility');
+    }
+
+    /**
+     * Typed CRUD for a `show_in_rest` custom post type (or any post-schema
+     * collection). Bare slugs resolve under `wp/v2/`.
+     */
+    public function resource(string $restBase): ResourceService
+    {
+        $path = (new RestPath())->collection($restBase);
+
+        /** @var ResourceService */
+        return $this->services['resource:' . $path] ??= new ResourceService(
+            $this->client,
+            $this->requestBuilder,
+            $this->decoder,
+            $this->errorMapper,
+            $path,
+        );
+    }
+
+    /**
+     * Typed CRUD for a `show_in_rest` custom taxonomy (or categories/tags
+     * by rest_base). Bare slugs resolve under `wp/v2/`.
+     *
+     * @param bool $hierarchical whether the taxonomy is hierarchical;
+     *                           hierarchical taxonomies paginate via
+     *                           `page`/`per_page` and ignore `offset`
+     */
+    public function terms(string $restBase, bool $hierarchical = false): TermsService
+    {
+        $path = (new RestPath())->collection($restBase);
+
+        /** @var TermsService */
+        return $this->services['terms:' . $path . ($hierarchical ? ':hierarchical' : '')] ??= new TermsService(
+            $this->client,
+            $this->requestBuilder,
+            $this->decoder,
+            $this->errorMapper,
+            $path,
+            $hierarchical,
+        );
     }
 
     /**

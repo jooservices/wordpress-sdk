@@ -45,4 +45,18 @@ final class RestPathTest extends TestCase
 
         $this->restPath->normalize('//example.com/wp-json/wp/v2/posts');
     }
+
+    public function testCollectionPrefixesBareSlugs(): void
+    {
+        self::assertSame('wp/v2/product', $this->restPath->collection('product'));
+        self::assertSame('wp/v2/book', $this->restPath->collection('wp/v2/book'));
+        self::assertSame('my-plugin/v1/items', $this->restPath->collection('my-plugin/v1/items'));
+    }
+
+    public function testCollectionRejectsEmptyPath(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->restPath->collection('   ');
+    }
 }

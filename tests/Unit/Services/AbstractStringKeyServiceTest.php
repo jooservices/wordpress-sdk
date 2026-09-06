@@ -12,7 +12,7 @@ use JOOservices\WordPress\Sdk\Data\Taxonomy;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
-final class SchemaServicesTest extends TestCase
+final class AbstractStringKeyServiceTest extends TestCase
 {
     private WordPressService $wordPress;
 

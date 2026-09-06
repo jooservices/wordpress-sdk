@@ -16,7 +16,9 @@ first access and cached per facade instance.
 | `search()` | `PaginatedCollection<SearchResult>` | read-only |
 | `taxonomies()` / `postTypes()` / `statuses()` | keyed DTOs | get by slug, read-only |
 | `settings()` | `Settings` | get/update |
-| `applicationPasswords()` | `ApplicationPassword` | scoped by user id |
+| `applicationPasswords()` | `ApplicationPassword` | scoped by user id; `update()` renames |
+| `resource($restBase)` | `Post` | custom post types (`show_in_rest`) |
+| `terms($restBase)` | `Term` | custom taxonomies (`show_in_rest`) |
 | `discovery()` | raw arrays | index/routes/schema |
 | `custom()` | raw arrays | arbitrary relative paths |
 | `revisions()` / `autosaves()` | raw arrays | shared post-backed allowlist via `resource()` |

@@ -10,6 +10,7 @@ use JOOservices\Client\Request\RequestBuilder;
 use JOOservices\Dto\Core\Dto;
 use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
 use JOOservices\WordPress\Sdk\Contracts\ResponseDecoderInterface;
+use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Pagination\PaginatedCollection;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -171,6 +172,16 @@ abstract class AbstractService
     }
 
     /**
+     * @param array<string, mixed>|PayloadInterface $payload
+     *
+     * @return array<string, mixed>
+     */
+    protected function payloadArray(array|PayloadInterface $payload): array
+    {
+        return $payload instanceof PayloadInterface ? $payload->toPayload() : $payload;
+    }
+
+    /**
      * Streams every page of a collection lazily.
      *
      * @template TDto of Dto
@@ -183,8 +194,8 @@ abstract class AbstractService
     protected function cursorItems(string $uri, string $dtoClass, array $params): Generator
     {
         $page = 1;
-        if (isset($params['page']) && is_int($params['page'])) {
-            $page = max(1, $params['page']);
+        if (isset($params['page']) && is_numeric($params['page'])) {
+            $page = max(1, (int) $params['page']);
         }
 
         while (true) {

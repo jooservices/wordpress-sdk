@@ -10,7 +10,7 @@ use JOOservices\WordPress\Sdk\Data\Term;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
-final class TaxonomyServicesTest extends TestCase
+final class CategoriesServiceTest extends TestCase
 {
     private WordPressService $wordPress;
 

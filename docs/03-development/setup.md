@@ -9,7 +9,8 @@ wraps the composer scripts.
 make build       # build the Docker image (jooservices/wordpress-sdk:php85)
 make install     # composer install inside the container
 make shell       # interactive container shell
-make lint        # pint --test + phpstan analyse (level max)
+make lint        # pint + phpcs + phpstan (level max) + phpmd + php-cs-fixer
+make lint-fix    # pint + php-cs-fixer
 make test        # phpunit Unit suite
 make test-coverage
 make audit       # composer audit

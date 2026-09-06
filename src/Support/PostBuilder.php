@@ -40,6 +40,8 @@ final class PostBuilder
     /**
      * Accepts rendered block markup (`render()` output), a raw string, or a
      * closure that receives a fresh `ContentBuilder` and returns it.
+     *
+     * @param ContentBuilder|(Closure(ContentBuilder): ContentBuilder)|string $content
      */
     public function content(ContentBuilder|Closure|string $content): self
     {

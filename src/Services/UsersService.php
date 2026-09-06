@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\WordPress\Sdk\Services;
 
 use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
+use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Data\User;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 
@@ -25,6 +26,38 @@ final class UsersService extends AbstractCrudService
             Endpoint::USERS_ME->path(),
             User::class,
             ['query' => $this->normalizeQueryParameters($params)],
+        );
+    }
+
+    /**
+     * @param array<string, mixed>|PayloadInterface $payload
+     */
+    public function updateMe(array|PayloadInterface $payload): User
+    {
+        /** @var User */
+        return $this->updateItem(
+            Endpoint::USERS_ME->path(),
+            $this->payloadArray($payload),
+            User::class,
+        );
+    }
+
+    public function deleteMe(bool $force = false, ?int $reassign = null): User
+    {
+        $query = [];
+        if ($force) {
+            $query['force'] = 'true';
+        }
+
+        if ($reassign !== null) {
+            $query['reassign'] = $reassign;
+        }
+
+        /** @var User */
+        return $this->deleteAndDecode(
+            Endpoint::USERS_ME->path(),
+            User::class,
+            $query === [] ? [] : ['query' => $query],
         );
     }
 

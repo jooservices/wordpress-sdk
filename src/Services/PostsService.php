@@ -25,6 +25,22 @@ final class PostsService extends AbstractCrudService
         return new PostBuilder($this, $this->mediaService);
     }
 
+    public function revisions(int $id): RevisionResourceService
+    {
+        return new RevisionResourceService(
+            new RevisionsService($this->client, $this->requestBuilder, $this->decoder, $this->errorMapper),
+            Endpoint::POSTS->withChild($id, 'revisions'),
+        );
+    }
+
+    public function autosaves(int $id): AutosaveResourceService
+    {
+        return new AutosaveResourceService(
+            new AutosavesService($this->client, $this->requestBuilder, $this->decoder, $this->errorMapper),
+            Endpoint::POSTS->withChild($id, 'autosaves'),
+        );
+    }
+
     protected function dtoClass(): string
     {
         return Post::class;

@@ -11,7 +11,7 @@ use JOOservices\WordPress\Sdk\Data\SearchResult;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 
-final class MiscServicesTest extends TestCase
+final class SearchServiceTest extends TestCase
 {
     private WordPressService $wordPress;
 

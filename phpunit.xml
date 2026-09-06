@@ -6,7 +6,11 @@
          executionOrder="random"
          failOnWarning="true"
          failOnRisky="true"
+         failOnIncomplete="true"
          failOnEmptyTestSuite="true"
+         failOnDeprecation="true"
+         failOnPhpunitDeprecation="true"
+         failOnNotice="true"
          beStrictAboutOutputDuringTests="true"
          cacheDirectory=".phpunit.cache">
     <testsuites>

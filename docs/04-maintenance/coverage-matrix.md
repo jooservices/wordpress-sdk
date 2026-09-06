@@ -45,8 +45,8 @@ v1, and oEmbed.
   prefixes). An unknown default core route fails E2E until the SDK declares it.
 - Revisions and autosaves share one post-backed resource allowlist
   (`PostBackedResources`).
-- Application passwords have no per-UUID update route in WordPress 7.1; the
-  supported core operations are list/get/create/introspect/delete/delete-all.
+- Application passwords support list/get/create/update (rename)/introspect/
+  delete/delete-all. WordPress does not rotate the generated secret on update.
 - ETag/Last-Modified conditional request helpers.
 - Typed payload DTOs for `create()`/`update()` (payloads stay raw arrays).
 

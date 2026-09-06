@@ -1,0 +1,6 @@
+# zizmor policy for jooservices/wordpress-sdk workflows.
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        "*": ref-pin

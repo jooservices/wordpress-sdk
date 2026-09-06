@@ -19,7 +19,7 @@ use Traversable;
  *
  * @implements IteratorAggregate<int, TDto>
  */
-class PaginatedCollection implements IteratorAggregate, Countable
+final class PaginatedCollection implements IteratorAggregate, Countable
 {
     /**
      * @param list<TDto> $items
@@ -44,10 +44,22 @@ class PaginatedCollection implements IteratorAggregate, Countable
     }
 
     /**
+     * Items on the current page.
+     *
+     * @return list<TDto>
+     */
+    public function items(): array
+    {
+        return $this->items;
+    }
+
+    /**
+     * Alias of {@see items()} — this page only, not every page of the resource.
+     *
      * @return list<TDto>
      */
     public function all(): array
     {
-        return $this->items;
+        return $this->items();
     }
 }

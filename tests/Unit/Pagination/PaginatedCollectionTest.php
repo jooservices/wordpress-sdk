@@ -34,6 +34,7 @@ final class PaginatedCollectionTest extends TestCase
         $collection = new PaginatedCollection([new Post(id: 3)], total: 1, totalPages: 1);
 
         self::assertSame([3], array_map(static fn(Post $post): int => $post->id, $collection->all()));
+        self::assertSame($collection->all(), $collection->items());
     }
 
     public function testEmptyCollection(): void

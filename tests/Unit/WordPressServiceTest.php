@@ -8,6 +8,7 @@ use JOOservices\Client\Resilience\RetryConfig;
 use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Config;
+use JOOservices\WordPress\Sdk\Http\ClientFactory;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
 use ReflectionMethod;
@@ -97,8 +98,26 @@ final class WordPressServiceTest extends TestCase
     {
         $wordPress = $this->wordPress();
 
-        $builder = $wordPress->contentBuilder()->text('Hello');
+        $builder = $wordPress->contentBuilder()->text($this->faker->sentence());
 
         self::assertStringContainsString('wp:paragraph', $builder->render());
+    }
+
+    public function testFromClientUsesInjectedTransport(): void
+    {
+        $config = new Config(
+            'https://example.test',
+            'admin',
+            'pass',
+            retry: new RetryConfig(maxAttempts: 1),
+        );
+        $client = (new ClientFactory())->create($config);
+        $wordPress = WordPressService::fromClient($client);
+
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['id' => 4, 'title' => ['rendered' => $this->faker->word()]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/posts/4*', $sequence);
+
+        self::assertSame(4, $wordPress->posts()->get(4)->id);
     }
 }

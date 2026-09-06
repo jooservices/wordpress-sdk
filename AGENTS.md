@@ -15,4 +15,4 @@ This file adds project-only rules.
   - Tests exercise the real request path via `ClientBuilder::fake()` / `HttpFakeRegistry` — no NullHttpClient-style doubles
 - Unit test files mirror `src/` paths under `tests/Unit/`
 - Branch model: `develop` for integration, `master` for production, tags from `master`
-- IDE: Pint format-on-save — use `tools/pint` (Docker wrapper) or `make lint:fix`
+- IDE: Pint format-on-save — use `tools/pint` (Docker wrapper) or `make lint-fix`

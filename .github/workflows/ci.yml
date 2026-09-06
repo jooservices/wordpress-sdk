@@ -101,6 +101,12 @@ jobs:
         run: tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run unit tests and enforce coverage
         run: tools/ci/docker-compose run --rm php composer test:coverage
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-Unit
+          path: coverage.xml
+          if-no-files-found: error
 
   consumer:
     name: Clean consumer
@@ -155,6 +161,13 @@ jobs:
       - name: Audit locked Composer dependencies
         if: matrix.name == 'Dependencies'
         run: tools/ci/docker-compose run --rm php composer audit --locked
+      - name: OSV Scanner
+        if: matrix.name == 'Dependencies'
+        uses: google/osv-scanner-action/osv-scanner-action@6e4298ebc4db23e847df9b2e2de2939d6f066c67 # v2.5.1
+        with:
+          scan-args: |-
+            --recursive
+            .
       - name: Review dependency changes
         if: matrix.name == 'Dependencies'
         uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
@@ -173,3 +186,54 @@ jobs:
             --volume "${GITHUB_WORKSPACE}:/src:ro" \
             semgrep/semgrep@sha256:67319956da3dcb58baf5b322899c15458e3963e7018a86aeeb5cd224e69cb77a \
             semgrep scan --config p/php --error
+
+  coverage:
+    name: Coverage upload
+    needs: [unit, security]
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Download coverage artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: coverage-Unit
+          path: .
+      - name: Upload to Codecov
+        if: github.event.pull_request.user.type != 'Bot'
+        uses: codecov/codecov-action@v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: true
+      - name: Resolve SonarQube host URL
+        if: github.event.pull_request.user.type != 'Bot'
+        id: sonar-config
+        env:
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+        run: |
+          set -euo pipefail
+          host_url="${SONAR_HOST_URL:-https://sonarcloud.io}"
+          host_url="${host_url%/}"
+          case "${host_url}" in
+            http://*|https://*) ;;
+            *) host_url="https://${host_url}" ;;
+          esac
+          if [[ ! "${host_url}" =~ ^https?://[^[:space:]/]+ ]]; then
+            echo "SONAR_HOST_URL must be a valid HTTP(S) URL"
+            exit 1
+          fi
+          echo "host_url=${host_url}" >> "${GITHUB_OUTPUT}"
+      - name: Upload SonarQube analysis
+        if: github.event.pull_request.user.type != 'Bot'
+        uses: SonarSource/sonarqube-scan-action@v8
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ steps.sonar-config.outputs.host_url }}
+        with:
+          args: >
+            -Dsonar.php.coverage.reportPaths=coverage.xml

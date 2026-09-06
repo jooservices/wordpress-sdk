@@ -54,6 +54,22 @@ final class PluginsService extends RawEndpointService
     /**
      * @return array<string, mixed>
      */
+    public function activate(string $plugin): array
+    {
+        return $this->update($plugin, ['status' => 'active']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function deactivate(string $plugin): array
+    {
+        return $this->update($plugin, ['status' => 'inactive']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     public function delete(string $plugin): array
     {
         return $this->deleteRaw(Endpoint::PLUGINS->path() . '/' . $this->pluginPath($plugin));

@@ -13,7 +13,7 @@ use JOOservices\WordPress\Sdk\Data\Query\ListUsersQuery;
 use JOOservices\WordPress\Sdk\Data\Query\SearchQuery;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
-final class ListQueryTest extends TestCase
+final class AbstractListQueryTest extends TestCase
 {
     public function testBaseQueryMapsToWordPressKeys(): void
     {
@@ -64,18 +64,40 @@ final class ListQueryTest extends TestCase
             author: [1],
             authorExclude: [2],
             categories: [3],
+            categoriesExclude: [9],
             tags: [4],
-            status: 'publish',
+            tagsExclude: [8],
+            status: \JOOservices\WordPress\Sdk\Enums\PostStatus::Publish,
             sticky: true,
+            after: '2026-01-01T00:00:00',
+            before: '2026-12-31T23:59:59',
+            modifiedAfter: '2026-02-01T00:00:00',
+            modifiedBefore: '2026-11-01T00:00:00',
+            slug: ['hello-world'],
+            searchColumns: ['post_title'],
+            taxRelation: \JOOservices\WordPress\Sdk\Enums\TaxRelation::And,
+            format: 'standard',
+            offset: 20,
         );
 
         self::assertSame([
+            'offset' => 20,
             'author' => [1],
             'author_exclude' => [2],
             'categories' => [3],
+            'categories_exclude' => [9],
             'tags' => [4],
+            'tags_exclude' => [8],
             'status' => 'publish',
             'sticky' => true,
+            'after' => '2026-01-01T00:00:00',
+            'before' => '2026-12-31T23:59:59',
+            'modified_after' => '2026-02-01T00:00:00',
+            'modified_before' => '2026-11-01T00:00:00',
+            'slug' => ['hello-world'],
+            'search_columns' => ['post_title'],
+            'tax_relation' => 'AND',
+            'format' => 'standard',
         ], $query->toQuery());
     }
 

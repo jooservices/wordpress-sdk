@@ -19,7 +19,7 @@ use JOOservices\WordPress\Sdk\Data\Term;
 use JOOservices\WordPress\Sdk\Data\User;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
-final class DataModelsTest extends TestCase
+final class UserTest extends TestCase
 {
     public function testPostHydratesFromWordPressPayload(): void
     {
@@ -270,7 +270,7 @@ final class DataModelsTest extends TestCase
             'subtype' => 'post',
         ]);
 
-        self::assertSame(12, $result->id);
+        self::assertSame('12', $result->id);
         self::assertSame('Found', $result->title);
         self::assertSame('post', $result->type);
     }

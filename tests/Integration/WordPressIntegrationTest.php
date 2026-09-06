@@ -234,13 +234,16 @@ final class WordPressIntegrationTest extends TestCase
                 $created = $this->wordPress->applicationPasswords()->create('me', [
                     'name' => 'sdk-e2e-' . $this->faker->unique()->lexify('????'),
                 ]);
-                self::assertNotSame('', $created->uuid);
+                try {
+                    self::assertNotSame('', $created->uuid);
 
-                $renamed = $this->wordPress->applicationPasswords()->update('me', $created->uuid, [
-                    'name' => 'sdk-e2e-renamed',
-                ]);
-                self::assertSame('sdk-e2e-renamed', $renamed->name);
-                $this->wordPress->applicationPasswords()->delete('me', $created->uuid);
+                    $renamed = $this->wordPress->applicationPasswords()->update('me', $created->uuid, [
+                        'name' => 'sdk-e2e-renamed',
+                    ]);
+                    self::assertSame('sdk-e2e-renamed', $renamed->name);
+                } finally {
+                    $this->wordPress->applicationPasswords()->delete('me', $created->uuid);
+                }
             } finally {
                 $this->wordPress->posts()->delete($post->id, true);
             }

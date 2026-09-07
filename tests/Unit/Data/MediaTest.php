@@ -9,6 +9,26 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class MediaTest extends TestCase
 {
+    public function testHydratesRenderedFields(): void
+    {
+        $title = $this->faker->sentence(2);
+        $altText = $this->faker->words(2, true);
+        $sourceUrl = $this->faker->url();
+        $media = Media::from([
+            'id' => '3', 'title' => ['rendered' => $title],
+            'caption' => ['rendered' => sprintf('<p>%s</p>', $this->faker->sentence())],
+            'description' => ['rendered' => sprintf('<p>%s</p>', $this->faker->sentence())],
+            'alt_text' => $altText, 'media_type' => 'image', 'mime_type' => 'image/png',
+            'media_details' => ['width' => 800], 'author' => '1', 'source_url' => $sourceUrl,
+        ]);
+
+        self::assertSame(3, $media->id);
+        self::assertSame($title, $media->title?->rendered);
+        self::assertSame($altText, $media->alt_text);
+        self::assertSame(['width' => 800], $media->media_details);
+        self::assertSame($sourceUrl, $media->source_url);
+    }
+
     public function testHydratesAttachmentFields(): void
     {
         $media = Media::from([

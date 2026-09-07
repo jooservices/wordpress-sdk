@@ -86,4 +86,17 @@ final class MediaServiceTest extends TestCase
 
         $this->wordPress->media()->create(['title' => $this->faker->sentence(2)]);
     }
+
+    public function testPostProcessesAndEditsMedia(): void
+    {
+        $postProcess = new TestResponseSequence();
+        $postProcess->push(TestResponse::json(['id' => 4]));
+        $this->httpFakes()->respond('POST', '*wp/v2/media/4/post-process*', $postProcess);
+        self::assertSame(['id' => 4], $this->wordPress->media()->postProcess(4, 'create-image-subsizes'));
+
+        $edit = new TestResponseSequence();
+        $edit->push(TestResponse::json(['id' => 4]));
+        $this->httpFakes()->respond('POST', '*wp/v2/media/4/edit*', $edit);
+        self::assertSame(['id' => 4], $this->wordPress->media()->edit(4, ['rotation' => 90]));
+    }
 }

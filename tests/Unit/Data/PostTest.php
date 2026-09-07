@@ -4,12 +4,77 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Tests\Unit\Data;
 
-use JOOservices\WordPress\Sdk\Data\Page;
 use JOOservices\WordPress\Sdk\Data\Post;
+use JOOservices\WordPress\Sdk\Data\RenderedContent;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class PostTest extends TestCase
 {
+    public function testHydratesCompleteWordPressPayload(): void
+    {
+        $title = $this->faker->sentence(3);
+        $content = sprintf('<p>%s</p>', $this->faker->sentence());
+        $metaValue = (string) $this->faker->randomNumber();
+        $payload = json_decode(json_encode([
+            'id' => '42', 'date' => '2026-08-29T10:00:00', 'date_gmt' => '2026-08-29T10:00:00',
+            'guid' => ['rendered' => $this->faker->url()], 'modified' => '2026-08-29T11:00:00',
+            'modified_gmt' => '2026-08-29T11:00:00', 'slug' => $this->faker->slug(),
+            'status' => 'publish', 'type' => 'post', 'link' => $this->faker->url(),
+            'title' => ['rendered' => $title, 'raw' => $title],
+            'content' => ['rendered' => $content, 'protected' => false],
+            'excerpt' => ['rendered' => sprintf('<p>%s</p>', $this->faker->sentence()), 'protected' => false],
+            'author' => '1', 'featured_media' => '7', 'comment_status' => 'open', 'ping_status' => 'closed',
+            'sticky' => true, 'template' => false, 'format' => 'standard', 'meta' => ['_edit_lock' => $metaValue],
+            'categories' => ['3', 4], 'tags' => [5],
+        ], JSON_THROW_ON_ERROR), true);
+        /** @var array<string, mixed> $payload */
+        $post = Post::from($payload);
+
+        self::assertSame(42, $post->id);
+        self::assertSame(7, $post->featured_media);
+        self::assertSame($title, $post->title?->rendered);
+        self::assertSame($content, $post->content?->rendered);
+        self::assertInstanceOf(RenderedContent::class, $post->guid);
+        self::assertTrue($post->sticky);
+        self::assertSame('', $post->template);
+        self::assertSame([3, 4], $post->categories);
+        self::assertSame([5], $post->tags);
+        self::assertSame(['_edit_lock' => $metaValue], $post->meta);
+    }
+
+    public function testUsesDefaultsForEmptyPayload(): void
+    {
+        $post = new Post();
+        self::assertSame(0, $post->id);
+        self::assertNull($post->featured_media);
+        self::assertSame('', $post->slug);
+        self::assertNull($post->title);
+        self::assertSame([], $post->categories);
+        self::assertFalse($post->sticky);
+    }
+
+    public function testAcceptsNullFeaturedMedia(): void
+    {
+        self::assertNull(Post::from(['id' => 1, 'featured_media' => null])->featured_media);
+    }
+
+    public function testIgnoresUnknownKeys(): void
+    {
+        $post = Post::from(['id' => 1, '_links' => ['self' => [['href' => $this->faker->url()]]], 'junk' => $this->faker->word()]);
+        self::assertSame(1, $post->id);
+    }
+
+    public function testSerializesToArray(): void
+    {
+        $title = $this->faker->sentence(2);
+        $array = Post::from(['id' => 1, 'title' => ['rendered' => $title], 'sticky' => true])->toArray();
+        self::assertSame(1, $array['id']);
+        $serializedTitle = $array['title'] ?? [];
+        /** @var array<string, mixed> $serializedTitle */
+        self::assertSame($title, $serializedTitle['rendered'] ?? null);
+        self::assertTrue($array['sticky']);
+    }
+
     public function testHydratesFromWordPressPayloadIncludingEditFields(): void
     {
         $post = Post::from([
@@ -36,20 +101,5 @@ final class PostTest extends TestCase
         self::assertSame(9, $post->parent);
         self::assertSame(3, $post->menu_order);
         self::assertNotNull($post->title);
-    }
-
-    public function testPageHydratesHierarchicalFields(): void
-    {
-        $page = Page::from([
-            'id' => 8,
-            'type' => 'page',
-            'parent' => 3,
-            'menu_order' => 2,
-            'title' => ['rendered' => $this->faker->words(2, true)],
-        ]);
-
-        self::assertSame(8, $page->id);
-        self::assertSame(3, $page->parent);
-        self::assertSame(2, $page->menu_order);
     }
 }

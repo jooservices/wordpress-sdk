@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace JOOservices\WordPress\Sdk\Tests\Unit\Support\ContentBuilder;
+namespace JOOservices\WordPress\Sdk\Tests\Unit\Support\ContentBuilder\Parser;
 
 use InvalidArgumentException;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\BlockRegistry;

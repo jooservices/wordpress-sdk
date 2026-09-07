@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-09-07
+
 ### Added
 
 - `WordPressService::fromClient()` for a pre-built PSR-18 client (bearer/JWT).
@@ -150,5 +152,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FontsService::uploadFace()`.
 - Render multi-paragraph quotes as separate `<p>` elements.
 
-[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.1.0
 [4.0.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.0.0

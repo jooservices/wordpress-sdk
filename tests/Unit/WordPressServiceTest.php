@@ -60,9 +60,11 @@ final class WordPressServiceTest extends TestCase
     public function testServicesAreLazilyCachedPerFacade(): void
     {
         $wordPress = $this->wordPress();
+        $taxonomy = $this->faker->slug();
 
         self::assertSame($wordPress->posts(), $wordPress->posts());
         self::assertSame($wordPress->media(), $wordPress->media());
+        self::assertSame($wordPress->terms($taxonomy), $wordPress->terms($taxonomy));
     }
 
     public function testEveryAccessorReturnsItsDeclaredServiceType(): void

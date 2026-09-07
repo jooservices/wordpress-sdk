@@ -57,15 +57,13 @@ final readonly class Config
 
     private static function normalizeBaseUrl(string $baseUrl): string
     {
-        if ($baseUrl === '' || filter_var($baseUrl, FILTER_VALIDATE_URL) === false) {
+        $parts = parse_url($baseUrl);
+
+        if (! is_array($parts) || filter_var($baseUrl, FILTER_VALIDATE_URL) === false) {
             throw new InvalidArgumentException(sprintf('Invalid base URL: %s', $baseUrl));
         }
 
-        $parts = parse_url($baseUrl);
-        $scheme = $parts['scheme'] ?? null;
-
-        if (! is_array($parts)
-            || ! in_array($scheme, ['http', 'https'], true)
+        if (! in_array($parts['scheme'] ?? null, ['http', 'https'], true)
             || ! isset($parts['host'])
             || isset($parts['query'])
             || isset($parts['fragment'])

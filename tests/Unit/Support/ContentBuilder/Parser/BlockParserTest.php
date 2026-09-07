@@ -20,6 +20,7 @@ use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Separator;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Raw\HtmlBlock;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\GenericBlock;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Parser\BlockParser;
+use JOOservices\WordPress\Sdk\Tests\Fixtures\CustomBlock;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class BlockParserTest extends TestCase
@@ -76,6 +77,26 @@ final class BlockParserTest extends TestCase
             "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $blocks[0]->render(),
         );
+    }
+
+    public function testRegisteredOverrideTakesPrecedenceOverCoreParser(): void
+    {
+        $content = $this->faker->sentence();
+        $attributes = ['anchor' => $this->faker->slug()];
+        $this->registry->register('core/paragraph', CustomBlock::class);
+
+        $blocks = $this->parser->parse(
+            sprintf(
+                "<!-- wp:paragraph %s -->\n<p>%s</p>\n<!-- /wp:paragraph -->",
+                json_encode($attributes, JSON_THROW_ON_ERROR),
+                $content,
+            ),
+            $this->registry,
+        );
+
+        self::assertInstanceOf(CustomBlock::class, $blocks[0]);
+        self::assertSame("\n<p>{$content}</p>\n", $blocks[0]->content);
+        self::assertSame($attributes, $blocks[0]->attributes);
     }
 
     public function testParsesHeadingWithLevel(): void

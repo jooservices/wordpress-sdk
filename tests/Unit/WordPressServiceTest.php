@@ -9,8 +9,14 @@ use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Config;
 use JOOservices\WordPress\Sdk\Http\ClientFactory;
+use JOOservices\WordPress\Sdk\Http\ErrorMapper;
+use JOOservices\WordPress\Sdk\Contracts\ResponseDecoderInterface;
+use JOOservices\WordPress\Sdk\Services\MediaService;
+use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
+use JOOservices\Client\Request\RequestBuilder;
+use Psr\Http\Client\ClientInterface;
 use ReflectionMethod;
 use ReflectionNamedType;
 use ReflectionProperty;
@@ -92,6 +98,25 @@ final class WordPressServiceTest extends TestCase
         $mediaService = (new ReflectionProperty($builder, 'mediaService'))->getValue($builder);
 
         self::assertSame($wordPress->media(), $mediaService);
+    }
+
+    public function testDirectPostsServiceConstructionProvidesMediaToBuilder(): void
+    {
+        $wordPress = $this->wordPress();
+        $client = (new ReflectionProperty($wordPress, 'client'))->getValue($wordPress);
+        $requestBuilder = (new ReflectionProperty($wordPress, 'requestBuilder'))->getValue($wordPress);
+        $decoder = (new ReflectionProperty($wordPress, 'decoder'))->getValue($wordPress);
+        $errorMapper = (new ReflectionProperty($wordPress, 'errorMapper'))->getValue($wordPress);
+
+        self::assertInstanceOf(ClientInterface::class, $client);
+        self::assertInstanceOf(RequestBuilder::class, $requestBuilder);
+        self::assertInstanceOf(ResponseDecoderInterface::class, $decoder);
+        self::assertInstanceOf(ErrorMapper::class, $errorMapper);
+
+        $posts = new PostsService($client, $requestBuilder, $decoder, $errorMapper);
+        $mediaService = (new ReflectionProperty($posts->builder(), 'mediaService'))->getValue($posts->builder());
+
+        self::assertInstanceOf(MediaService::class, $mediaService);
     }
 
     public function testContentBuilderIsWiredWithMediaService(): void

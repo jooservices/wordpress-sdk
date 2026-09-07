@@ -21,6 +21,7 @@ final class DiscoveryServiceTest extends TestCase
 
         self::assertSame($name, $this->wordPress()->discovery()->index()['name']);
         self::assertSame($payload['routes'], $this->wordPress()->discovery()->routes());
+        self::assertSame('/wp-json', $this->lastRequest()->getUri()->getPath());
         self::assertSame('', $this->lastRequest()->getUri()->getQuery());
     }
 

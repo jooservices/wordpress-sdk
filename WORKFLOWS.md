@@ -20,7 +20,9 @@ containers via the repository Docker Compose wrapper
 - Commitlint, semantic PR title, CodeQL, PR labeler, and workflow audit when applicable
 
 `ci-post-merge.yml` repeats the package and integration gates on `master` and
-`develop`. Dependabot covers Composer and GitHub Actions weekly.
+`develop`, then uploads the package coverage report to Codecov so each branch
+head can be used as a comparison base. Dependabot covers Composer and GitHub
+Actions weekly.
 
 ## Other workflows
 

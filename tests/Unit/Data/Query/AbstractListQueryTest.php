@@ -17,10 +17,11 @@ final class AbstractListQueryTest extends TestCase
 {
     public function testBaseQueryMapsToWordPressKeys(): void
     {
+        $search = $this->faker->word();
         $query = new ListPostsQuery(
             page: 2,
             perPage: 10,
-            search: 'hello',
+            search: $search,
             context: 'edit',
             orderby: 'date',
             order: 'desc',
@@ -33,7 +34,7 @@ final class AbstractListQueryTest extends TestCase
         self::assertSame([
             'page' => 2,
             'per_page' => 10,
-            'search' => 'hello',
+            'search' => $search,
             'context' => 'edit',
             'orderby' => 'date',
             'order' => 'desc',
@@ -60,6 +61,7 @@ final class AbstractListQueryTest extends TestCase
 
     public function testPostsQueryExtraParams(): void
     {
+        $slug = $this->faker->slug();
         $query = new ListPostsQuery(
             author: [1],
             authorExclude: [2],
@@ -73,7 +75,7 @@ final class AbstractListQueryTest extends TestCase
             before: '2026-12-31T23:59:59',
             modifiedAfter: '2026-02-01T00:00:00',
             modifiedBefore: '2026-11-01T00:00:00',
-            slug: ['hello-world'],
+            slug: [$slug],
             searchColumns: ['post_title'],
             taxRelation: \JOOservices\WordPress\Sdk\Enums\TaxRelation::And,
             format: 'standard',
@@ -94,7 +96,7 @@ final class AbstractListQueryTest extends TestCase
             'before' => '2026-12-31T23:59:59',
             'modified_after' => '2026-02-01T00:00:00',
             'modified_before' => '2026-11-01T00:00:00',
-            'slug' => ['hello-world'],
+            'slug' => [$slug],
             'search_columns' => ['post_title'],
             'tax_relation' => 'AND',
             'format' => 'standard',
@@ -137,13 +139,14 @@ final class AbstractListQueryTest extends TestCase
 
     public function testTermsQueryExtraParams(): void
     {
-        $query = new ListTermsQuery(hideEmpty: true, parent: 2, post: 9, slug: ['news']);
+        $slug = $this->faker->slug();
+        $query = new ListTermsQuery(hideEmpty: true, parent: 2, post: 9, slug: [$slug]);
 
         self::assertSame([
             'hide_empty' => true,
             'parent' => 2,
             'post' => 9,
-            'slug' => ['news'],
+            'slug' => [$slug],
         ], $query->toQuery());
     }
 
@@ -182,6 +185,7 @@ final class AbstractListQueryTest extends TestCase
 
     public function testOffsetPositionPreservesLegacyPositionalArguments(): void
     {
+        $search = $this->faker->word();
         $query = new ListUsersQuery(
             null, // roles
             null, // capabilities
@@ -190,7 +194,7 @@ final class AbstractListQueryTest extends TestCase
             null, // slug
             2, // page
             10, // perPage
-            'jane', // search
+            $search, // search
             'edit', // context
             'name', // orderby
             'asc', // order
@@ -205,7 +209,7 @@ final class AbstractListQueryTest extends TestCase
             'page' => 2,
             'per_page' => 10,
             'offset' => 5,
-            'search' => 'jane',
+            'search' => $search,
             'context' => 'edit',
             'orderby' => 'name',
             'order' => 'asc',

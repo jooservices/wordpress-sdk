@@ -23,8 +23,9 @@ final class TermsServiceTest extends TestCase
 
     public function testDeleteDefaultsToForceAndSendsForceTrue(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 6, 'name' => 'Tech']]));
+        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 6, 'name' => $name]]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/portfolio/6*', $sequence);
 
         $deleted = $this->wordPress->terms('portfolio')->delete(6);
@@ -42,12 +43,13 @@ final class TermsServiceTest extends TestCase
 
     public function testHierarchicalTaxonomyDropsOffset(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [
             'X-WP-Total' => '1',
             'X-WP-TotalPages' => '1',
         ], json_encode([
-            ['id' => 9, 'name' => 'Finance'],
+            ['id' => 9, 'name' => $name],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/departments*', $sequence);
 
@@ -61,12 +63,13 @@ final class TermsServiceTest extends TestCase
 
     public function testNonHierarchicalTaxonomyKeepsOffset(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [
             'X-WP-Total' => '1',
             'X-WP-TotalPages' => '1',
         ], json_encode([
-            ['id' => 9, 'name' => 'Finance'],
+            ['id' => 9, 'name' => $name],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/portfolio*', $sequence);
 

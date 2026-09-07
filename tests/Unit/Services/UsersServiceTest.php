@@ -57,8 +57,9 @@ final class UsersServiceTest extends TestCase
 
     public function testDeleteMeSendsForceAndReassign(): void
     {
+        $name = $this->faker->name();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => 'Admin']]));
+        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => $name]]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/users/me*', $sequence);
 
         $deleted = $this->wordPress()->users()->deleteMe(reassign: 2);
@@ -69,8 +70,9 @@ final class UsersServiceTest extends TestCase
 
     public function testDeleteMeDefaultsReassignToFalse(): void
     {
+        $name = $this->faker->name();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => 'Admin']]));
+        $sequence->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 1, 'name' => $name]]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/users/me*', $sequence);
 
         $this->wordPress()->users()->deleteMe();

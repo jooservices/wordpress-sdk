@@ -12,8 +12,10 @@ final class PaginatedCollectionTest extends TestCase
 {
     public function testIteratesAndCountsItems(): void
     {
-        $postA = new Post(id: 1);
-        $postB = new Post(id: 2);
+        $firstId = $this->faker->numberBetween(1, 1000);
+        $secondId = $this->faker->numberBetween(1001, 2000);
+        $postA = new Post(id: $firstId);
+        $postB = new Post(id: $secondId);
 
         $collection = new PaginatedCollection([$postA, $postB], total: 20, totalPages: 10);
 
@@ -26,14 +28,15 @@ final class PaginatedCollectionTest extends TestCase
             $ids[] = $post->id;
         }
 
-        self::assertSame([1, 2], $ids);
+        self::assertSame([$firstId, $secondId], $ids);
     }
 
     public function testAllReturnsItems(): void
     {
-        $collection = new PaginatedCollection([new Post(id: 3)], total: 1, totalPages: 1);
+        $id = $this->faker->numberBetween(1);
+        $collection = new PaginatedCollection([new Post(id: $id)], total: 1, totalPages: 1);
 
-        self::assertSame([3], array_map(static fn(Post $post): int => $post->id, $collection->all()));
+        self::assertSame([$id], array_map(static fn(Post $post): int => $post->id, $collection->all()));
         self::assertSame($collection->all(), $collection->items());
     }
 

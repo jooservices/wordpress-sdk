@@ -37,117 +37,133 @@ final class BlockParserTest extends TestCase
 
     public function testParsesPlainTextAsHtmlBlock(): void
     {
-        $blocks = $this->parser->parse("Just text\n\nMore text", $this->registry);
+        $content = $this->faker->paragraph() . "\n\n" . $this->faker->paragraph();
+        $blocks = $this->parser->parse($content, $this->registry);
 
         self::assertCount(1, $blocks);
         self::assertInstanceOf(HtmlBlock::class, $blocks[0]);
-        self::assertSame("Just text\n\nMore text", $blocks[0]->toHtml());
+        self::assertSame($content, $blocks[0]->toHtml());
     }
 
     public function testParsesParagraph(): void
     {
+        $content = $this->faker->sentence();
         $blocks = $this->parser->parse(
-            "<!-- wp:paragraph -->\n<p>Hello</p>\n<!-- /wp:paragraph -->",
+            "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $this->registry,
         );
 
         self::assertCount(1, $blocks);
         self::assertInstanceOf(Paragraph::class, $blocks[0]);
-        self::assertSame('Hello', $blocks[0]->text);
+        self::assertSame($content, $blocks[0]->text);
         self::assertSame([], $blocks[0]->attributes);
     }
 
     public function testParsesParagraphPreservesInlineMarkup(): void
     {
+        $first = $this->faker->word();
+        $strong = $this->faker->word();
+        $emphasis = $this->faker->word();
+        $content = "{$first} <strong>{$strong}</strong> and <em>{$emphasis}</em>";
         $blocks = $this->parser->parse(
-            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $this->registry,
         );
 
         self::assertInstanceOf(Paragraph::class, $blocks[0]);
-        self::assertSame('Hello <strong>world</strong> and <em>friends</em>', $blocks[0]->text);
+        self::assertSame($content, $blocks[0]->text);
         self::assertSame(
-            "<!-- wp:paragraph -->\n<p>Hello <strong>world</strong> and <em>friends</em></p>\n<!-- /wp:paragraph -->",
+            "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $blocks[0]->render(),
         );
     }
 
     public function testParsesHeadingWithLevel(): void
     {
+        $title = $this->faker->sentence();
         $blocks = $this->parser->parse(
-            "<!-- wp:heading {\"level\":3,\"anchor\":\"x\"} -->\n<h3>Title</h3>\n<!-- /wp:heading -->",
+            "<!-- wp:heading {\"level\":3,\"anchor\":\"x\"} -->\n<h3>{$title}</h3>\n<!-- /wp:heading -->",
             $this->registry,
         );
 
         self::assertInstanceOf(Heading::class, $blocks[0]);
-        self::assertSame('Title', $blocks[0]->text);
+        self::assertSame($title, $blocks[0]->text);
         self::assertSame(3, $blocks[0]->level);
         self::assertSame(['level' => 3, 'anchor' => 'x'], $blocks[0]->attributes);
     }
 
     public function testParsesImageFromAttributesAndMarkup(): void
     {
+        $sourceUrl = $this->faker->imageUrl();
+        $alt = $this->faker->word();
         $blocks = $this->parser->parse(
             "<!-- wp:image {\"id\":4,\"sizeSlug\":\"full\",\"linkDestination\":\"none\"} -->\n"
-            . '<figure class="wp-block-image size-full"><img src="https://example.test/a.png" alt="Alt" class="wp-image-4"/></figure>'
+            . "<figure class=\"wp-block-image size-full\"><img src=\"{$sourceUrl}\" alt=\"{$alt}\" class=\"wp-image-4\"/></figure>"
             . "\n<!-- /wp:image -->",
             $this->registry,
         );
 
         self::assertInstanceOf(Image::class, $blocks[0]);
         self::assertSame(4, $blocks[0]->mediaId);
-        self::assertSame('https://example.test/a.png', $blocks[0]->src);
-        self::assertSame('Alt', $blocks[0]->alt);
+        self::assertSame($sourceUrl, $blocks[0]->src);
+        self::assertSame($alt, $blocks[0]->alt);
     }
 
     public function testParsesQuoteWithCitation(): void
     {
+        $content = $this->faker->sentence();
+        $citation = $this->faker->word();
         $blocks = $this->parser->parse(
-            "<!-- wp:quote {\"citation\":\"Author\"} -->\n<blockquote class=\"wp-block-quote\"><p>Text</p><cite>Author</cite></blockquote>\n<!-- /wp:quote -->",
+            "<!-- wp:quote {\"citation\":\"{$citation}\"} -->\n<blockquote class=\"wp-block-quote\"><p>{$content}</p><cite>{$citation}</cite></blockquote>\n<!-- /wp:quote -->",
             $this->registry,
         );
 
         self::assertInstanceOf(Quote::class, $blocks[0]);
-        self::assertSame('Text', $blocks[0]->content);
-        self::assertSame('Author', $blocks[0]->citation);
+        self::assertSame($content, $blocks[0]->content);
+        self::assertSame($citation, $blocks[0]->citation);
     }
 
     public function testParsesQuoteWithMultipleParagraphs(): void
     {
+        $first = $this->faker->sentence();
+        $second = $this->faker->sentence();
         $source = "<!-- wp:quote -->\n"
-            . '<blockquote class="wp-block-quote"><p>First</p><p>Second</p></blockquote>'
+            . "<blockquote class=\"wp-block-quote\"><p>{$first}</p><p>{$second}</p></blockquote>"
             . "\n<!-- /wp:quote -->";
 
         $blocks = $this->parser->parse($source, $this->registry);
 
         self::assertInstanceOf(Quote::class, $blocks[0]);
-        self::assertSame("First\n\nSecond", $blocks[0]->content);
+        self::assertSame("{$first}\n\n{$second}", $blocks[0]->content);
         self::assertSame($source, $blocks[0]->render());
     }
 
     public function testParsesReadMoreWithCustomText(): void
     {
+        $customText = $this->faker->word();
         $blocks = $this->parser->parse(
-            "<!-- wp:more {\"customText\":\"Read on\"} -->\n<!--more Read on-->\n<!-- /wp:more -->",
+            "<!-- wp:more {\"customText\":\"{$customText}\"} -->\n<!--more {$customText}-->\n<!-- /wp:more -->",
             $this->registry,
         );
 
         self::assertInstanceOf(ReadMore::class, $blocks[0]);
-        self::assertSame('Read on', $blocks[0]->customText);
+        self::assertSame($customText, $blocks[0]->customText);
     }
 
     public function testParsesButton(): void
     {
+        $text = $this->faker->word();
+        $url = $this->faker->url();
         $blocks = $this->parser->parse(
             "<!-- wp:button -->\n"
-            . '<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://example.test">Go</a></div>'
+            . "<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{$url}\">{$text}</a></div>"
             . "\n<!-- /wp:button -->",
             $this->registry,
         );
 
         self::assertInstanceOf(Button::class, $blocks[0]);
-        self::assertSame('Go', $blocks[0]->text);
-        self::assertSame('https://example.test', $blocks[0]->url);
+        self::assertSame($text, $blocks[0]->text);
+        self::assertSame($url, $blocks[0]->url);
     }
 
     public function testParsesSeparatorAndReadMoreButton(): void
@@ -164,10 +180,11 @@ final class BlockParserTest extends TestCase
 
     public function testParsesContainersWithChildren(): void
     {
+        $content = $this->faker->word();
         $markup = "<!-- wp:columns -->\n"
             . '<div class="wp-block-columns">'
             . "<!-- wp:column -->\n<div class=\"wp-block-column\">"
-            . "<!-- wp:paragraph -->\n<p>Cell</p>\n<!-- /wp:paragraph -->"
+            . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</div>\n<!-- /wp:column -->"
             . "</div>\n<!-- /wp:columns -->";
 
@@ -184,9 +201,10 @@ final class BlockParserTest extends TestCase
 
     public function testParsesGroup(): void
     {
+        $content = $this->faker->sentence();
         $markup = "<!-- wp:group {\"tagName\":\"section\"} -->\n"
             . '<section class="wp-block-group">'
-            . "<!-- wp:paragraph -->\n<p>In group</p>\n<!-- /wp:paragraph -->"
+            . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</section>\n<!-- /wp:group -->";
 
         $blocks = $this->parser->parse($markup, $this->registry);
@@ -198,9 +216,11 @@ final class BlockParserTest extends TestCase
 
     public function testKeepsNonWrapperTextInsideContainers(): void
     {
+        $raw = $this->faker->sentence(2);
+        $paragraph = $this->faker->word();
         $markup = "<!-- wp:group -->\n"
-            . '<div class="wp-block-group">real text'
-            . "<!-- wp:paragraph -->\n<p>P</p>\n<!-- /wp:paragraph -->"
+            . "<div class=\"wp-block-group\">{$raw}"
+            . "<!-- wp:paragraph -->\n<p>{$paragraph}</p>\n<!-- /wp:paragraph -->"
             . "</div>\n<!-- /wp:group -->";
 
         $blocks = $this->parser->parse($markup, $this->registry);
@@ -212,8 +232,9 @@ final class BlockParserTest extends TestCase
 
     public function testUnknownBlocksBecomeGenericBlockWithoutCorePrefix(): void
     {
+        $inner = $this->faker->word();
         $blocks = $this->parser->parse(
-            "<!-- wp:my-plugin/widget {\"a\":1} -->\ninner\n<!-- /wp:my-plugin/widget -->",
+            "<!-- wp:my-plugin/widget {\"a\":1} -->\n{$inner}\n<!-- /wp:my-plugin/widget -->",
             $this->registry,
         );
 
@@ -224,13 +245,14 @@ final class BlockParserTest extends TestCase
 
     public function testMalformedMarkupDegradesToHtmlBlock(): void
     {
+        $content = $this->faker->sentence();
         $blocks = $this->parser->parse('<!-- wp:paragraph', $this->registry);
 
         self::assertCount(1, $blocks);
         self::assertInstanceOf(HtmlBlock::class, $blocks[0]);
 
         $blocks = $this->parser->parse(
-            "<!-- wp:paragraph -->\n<p>No closer</p>",
+            "<!-- wp:paragraph -->\n<p>{$content}</p>",
             $this->registry,
         );
 
@@ -250,11 +272,12 @@ final class BlockParserTest extends TestCase
 
     public function testRoundTripsNestedBlocksWithTheSameName(): void
     {
+        $content = $this->faker->word();
         $source = "<!-- wp:group {\"tagName\":\"div\"} -->\n"
             . '<div class="wp-block-group">'
             . "<!-- wp:group {\"tagName\":\"section\"} -->\n"
             . '<section class="wp-block-group">'
-            . "<!-- wp:paragraph -->\n<p>Nested</p>\n<!-- /wp:paragraph -->"
+            . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</section>\n<!-- /wp:group -->"
             . "</div>\n<!-- /wp:group -->";
 
@@ -267,9 +290,12 @@ final class BlockParserTest extends TestCase
 
     public function testRoundTripOfComplexDocument(): void
     {
-        $source = "<!-- wp:heading {\"level\":2} -->\n<h2>Intro</h2>\n<!-- /wp:heading -->\n\n"
-            . "<!-- wp:paragraph -->\n<p>Body text</p>\n<!-- /wp:paragraph -->\n\n"
-            . "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>Cited</p></blockquote>\n<!-- /wp:quote -->";
+        $heading = $this->faker->sentence();
+        $paragraph = $this->faker->paragraph();
+        $quote = $this->faker->sentence();
+        $source = "<!-- wp:heading {\"level\":2} -->\n<h2>{$heading}</h2>\n<!-- /wp:heading -->\n\n"
+            . "<!-- wp:paragraph -->\n<p>{$paragraph}</p>\n<!-- /wp:paragraph -->\n\n"
+            . "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>{$quote}</p></blockquote>\n<!-- /wp:quote -->";
 
         $blocks = $this->parser->parse($source, $this->registry);
 

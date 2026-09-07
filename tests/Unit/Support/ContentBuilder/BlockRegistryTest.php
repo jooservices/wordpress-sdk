@@ -82,24 +82,26 @@ final class BlockRegistryTest extends TestCase
 
     public function testParagraphRendersWithAlignClass(): void
     {
-        $block = new Paragraph('Hello', ['align' => 'center']);
+        $content = $this->faker->sentence();
+        $block = new Paragraph($content, ['align' => 'center']);
 
         self::assertSame(
-            "<!-- wp:paragraph {\"align\":\"center\"} -->\n<p class=\"has-text-align-center\">Hello</p>\n<!-- /wp:paragraph -->",
+            "<!-- wp:paragraph {\"align\":\"center\"} -->\n<p class=\"has-text-align-center\">{$content}</p>\n<!-- /wp:paragraph -->",
             $block->render(),
         );
-        self::assertSame('<p class="has-text-align-center">Hello</p>', $block->toHtml());
+        self::assertSame("<p class=\"has-text-align-center\">{$content}</p>", $block->toHtml());
     }
 
     public function testHeadingLevelIsOnlySerializedWhenNotDefault(): void
     {
+        $title = $this->faker->sentence();
         self::assertSame(
-            "<!-- wp:heading -->\n<h2>Title</h2>\n<!-- /wp:heading -->",
-            (new Heading('Title'))->render(),
+            "<!-- wp:heading -->\n<h2>{$title}</h2>\n<!-- /wp:heading -->",
+            (new Heading($title))->render(),
         );
         self::assertSame(
-            "<!-- wp:heading {\"level\":3} -->\n<h3>Title</h3>\n<!-- /wp:heading -->",
-            (new Heading('Title', 3))->render(),
+            "<!-- wp:heading {\"level\":3} -->\n<h3>{$title}</h3>\n<!-- /wp:heading -->",
+            (new Heading($title, 3))->render(),
         );
     }
 
@@ -112,11 +114,13 @@ final class BlockRegistryTest extends TestCase
 
     public function testImageRendersWithDefaults(): void
     {
-        $block = new Image(4, 'https://example.test/a.png', 'Alt');
+        $sourceUrl = $this->faker->imageUrl();
+        $alt = $this->faker->word();
+        $block = new Image(4, $sourceUrl, $alt);
 
         self::assertSame(
             "<!-- wp:image {\"id\":4,\"sizeSlug\":\"full\",\"linkDestination\":\"none\"} -->\n"
-            . '<figure class="wp-block-image size-full"><img src="https://example.test/a.png" alt="Alt" class="wp-image-4"/></figure>'
+            . "<figure class=\"wp-block-image size-full\"><img src=\"{$sourceUrl}\" alt=\"{$alt}\" class=\"wp-image-4\"/></figure>"
             . "\n<!-- /wp:image -->",
             $block->render(),
         );
@@ -132,25 +136,29 @@ final class BlockRegistryTest extends TestCase
 
     public function testQuoteRendersWithoutCitation(): void
     {
+        $content = $this->faker->sentence();
         self::assertSame(
-            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>Text</p></blockquote>\n<!-- /wp:quote -->",
-            (new Quote('Text'))->render(),
+            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>{$content}</p></blockquote>\n<!-- /wp:quote -->",
+            (new Quote($content))->render(),
         );
     }
 
     public function testQuoteRendersMultipleParagraphs(): void
     {
+        $first = $this->faker->sentence();
+        $second = $this->faker->sentence();
         self::assertSame(
-            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>First</p><p>Second</p></blockquote>\n<!-- /wp:quote -->",
-            (new Quote("First\n\nSecond"))->render(),
+            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>{$first}</p><p>{$second}</p></blockquote>\n<!-- /wp:quote -->",
+            (new Quote("{$first}\n\n{$second}"))->render(),
         );
     }
 
     public function testReadMoreSerializesCustomText(): void
     {
+        $customText = $this->faker->word();
         self::assertSame(
-            "<!-- wp:more {\"customText\":\"Read on\",\"noTeaser\":true} -->\n<!--more Read on-->\n<!-- /wp:more -->",
-            (new ReadMore('Read on', noTeaser: true))->render(),
+            "<!-- wp:more {\"customText\":\"{$customText}\",\"noTeaser\":true} -->\n<!--more {$customText}-->\n<!-- /wp:more -->",
+            (new ReadMore($customText, noTeaser: true))->render(),
         );
         self::assertSame(
             "<!-- wp:more -->\n<!--more-->\n<!-- /wp:more -->",
@@ -176,19 +184,22 @@ final class BlockRegistryTest extends TestCase
 
     public function testHtmlBlockRendersRaw(): void
     {
+        $content = $this->faker->word();
         self::assertSame(
-            "<!-- wp:html -->\n<div>raw</div>\n<!-- /wp:html -->",
-            (new HtmlBlock('<div>raw</div>'))->render(),
+            "<!-- wp:html -->\n<div>{$content}</div>\n<!-- /wp:html -->",
+            (new HtmlBlock("<div>{$content}</div>"))->render(),
         );
     }
 
     public function testButtonRendersValidMarkup(): void
     {
+        $text = $this->faker->word();
+        $url = $this->faker->url();
         self::assertSame(
             "<!-- wp:button -->\n"
-            . '<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://example.test">Go</a></div>'
+            . "<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{$url}\">{$text}</a></div>"
             . "\n<!-- /wp:button -->",
-            (new Button('Go', 'https://example.test'))->render(),
+            (new Button($text, $url))->render(),
         );
     }
 
@@ -217,9 +228,10 @@ final class BlockRegistryTest extends TestCase
 
     public function testContainersWrapInnerBlocks(): void
     {
+        $content = $this->faker->word();
         $columns = new Columns();
         $column = new Column();
-        $column->addBlock(new Paragraph('Cell'));
+        $column->addBlock(new Paragraph($content));
         $columns->addBlock($column);
 
         $rendered = $columns->render();
@@ -228,7 +240,7 @@ final class BlockRegistryTest extends TestCase
             "<!-- wp:columns -->\n"
             . '<div class="wp-block-columns">'
             . "<!-- wp:column -->\n<div class=\"wp-block-column\">"
-            . "<!-- wp:paragraph -->\n<p>Cell</p>\n<!-- /wp:paragraph -->"
+            . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</div>\n<!-- /wp:column -->"
             . "</div>\n<!-- /wp:columns -->",
             $rendered,
@@ -238,14 +250,16 @@ final class BlockRegistryTest extends TestCase
 
     public function testButtonsContainerRenders(): void
     {
+        $text = $this->faker->word();
+        $url = $this->faker->url();
         $buttons = new Buttons();
-        $buttons->addBlock(new Button('A', 'https://a.test'));
+        $buttons->addBlock(new Button($text, $url));
 
         self::assertSame(
             "<!-- wp:buttons -->\n"
             . '<div class="wp-block-buttons">'
             . "<!-- wp:button -->\n"
-            . '<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="https://a.test">A</a></div>'
+            . "<div class=\"wp-block-button\"><a class=\"wp-block-button__link wp-element-button\" href=\"{$url}\">{$text}</a></div>"
             . "\n<!-- /wp:button -->"
             . "</div>\n<!-- /wp:buttons -->",
             $buttons->render(),
@@ -254,13 +268,14 @@ final class BlockRegistryTest extends TestCase
 
     public function testGroupUsesTagName(): void
     {
+        $content = $this->faker->sentence();
         $group = new Group('section');
-        $group->addBlock(new Paragraph('In group'));
+        $group->addBlock(new Paragraph($content));
 
         self::assertSame(
             "<!-- wp:group {\"tagName\":\"section\"} -->\n"
             . '<section class="wp-block-group">'
-            . "<!-- wp:paragraph -->\n<p>In group</p>\n<!-- /wp:paragraph -->"
+            . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</section>\n<!-- /wp:group -->",
             $group->render(),
         );
@@ -282,10 +297,11 @@ final class BlockRegistryTest extends TestCase
 
     public function testGenericBlockPassesThrough(): void
     {
-        $block = new GenericBlock('my-plugin/widget', ['a' => 1], 'inner');
+        $inner = $this->faker->word();
+        $block = new GenericBlock('my-plugin/widget', ['a' => 1], $inner);
 
         self::assertSame(
-            "<!-- wp:my-plugin/widget {\"a\":1} -->\ninner\n<!-- /wp:my-plugin/widget -->",
+            "<!-- wp:my-plugin/widget {\"a\":1} -->\n{$inner}\n<!-- /wp:my-plugin/widget -->",
             $block->render(),
         );
     }

@@ -18,12 +18,14 @@ final class ClientFactoryTest extends TestCase
 {
     public function testAppliesBasicAuthWhenUsernameProvided(): void
     {
-        $client = (new ClientFactory())->create(new Config('https://example.com', 'admin', 'secret'));
+        $username = $this->faker->userName();
+        $password = $this->faker->password();
+        $client = (new ClientFactory())->create(new Config('https://example.com', $username, $password));
 
         $this->send($client, 'GET', 'wp/v2/users/me');
 
         $request = $this->lastRequest();
-        self::assertSame('Basic ' . base64_encode('admin:secret'), $request->getHeaderLine('Authorization'));
+        self::assertSame('Basic ' . base64_encode($username . ':' . $password), $request->getHeaderLine('Authorization'));
     }
 
     public function testOmitsAuthHeaderWithoutUsername(): void

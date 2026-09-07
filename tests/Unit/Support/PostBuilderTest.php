@@ -24,6 +24,9 @@ final class PostBuilderTest extends TestCase
 
     public function testBuildsPublishPayloadWithDefaults(): void
     {
+        $title = $this->faker->sentence(3);
+        $content = sprintf('<p>%s</p>', $this->faker->sentence());
+        $excerpt = $this->faker->sentence();
         $builder = $this->wordPress->posts()->builder();
 
         $sequence = new TestResponseSequence();
@@ -31,9 +34,9 @@ final class PostBuilderTest extends TestCase
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
         $post = $builder
-            ->title('Hello')
-            ->content('<p>Body</p>')
-            ->excerpt('Teaser')
+            ->title($title)
+            ->content($content)
+            ->excerpt($excerpt)
             ->categories([1, 2])
             ->tags([3])
             ->author(4)
@@ -41,9 +44,9 @@ final class PostBuilderTest extends TestCase
 
         self::assertSame(1, $post->id);
         $this->assertJsonBody($this->lastRequest(), [
-            'title' => 'Hello',
-            'content' => '<p>Body</p>',
-            'excerpt' => 'Teaser',
+            'title' => $title,
+            'content' => $content,
+            'excerpt' => $excerpt,
             'categories' => [1, 2],
             'tags' => [3],
             'author' => 4,
@@ -53,57 +56,63 @@ final class PostBuilderTest extends TestCase
 
     public function testContentBuilderIsRenderedIntoPayload(): void
     {
+        $text = $this->faker->sentence();
+        $title = $this->faker->sentence(2);
         $builder = $this->wordPress->posts()->builder();
 
-        $content = (new ContentBuilder())->text('Hello');
+        $content = (new ContentBuilder())->text($text);
         $builder->content($content);
 
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['id' => 1], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
-        $builder->title('X')->create();
+        $builder->title($title)->create();
 
         $this->assertJsonBody($this->lastRequest(), [
-            'title' => 'X',
-            'content' => "<!-- wp:paragraph -->\n<p>Hello</p>\n<!-- /wp:paragraph -->",
+            'title' => $title,
+            'content' => "<!-- wp:paragraph -->\n<p>{$text}</p>\n<!-- /wp:paragraph -->",
             'status' => 'publish',
         ]);
     }
 
     public function testContentClosureReceivesBuilder(): void
     {
+        $heading = $this->faker->sentence(2);
+        $title = $this->faker->sentence(2);
         $builder = $this->wordPress->posts()->builder();
 
-        $builder->content(function (ContentBuilder $builder): ContentBuilder {
-            return $builder->heading('Section');
+        $builder->content(function (ContentBuilder $builder) use ($heading): ContentBuilder {
+            return $builder->heading($heading);
         });
 
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['id' => 1], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
-        $builder->title('X')->create();
+        $builder->title($title)->create();
 
         $this->assertJsonBody($this->lastRequest(), [
-            'title' => 'X',
-            'content' => "<!-- wp:heading -->\n<h2>Section</h2>\n<!-- /wp:heading -->",
+            'title' => $title,
+            'content' => "<!-- wp:heading -->\n<h2>{$heading}</h2>\n<!-- /wp:heading -->",
             'status' => 'publish',
         ]);
     }
 
     public function testContentClosureMustReturnBuilder(): void
     {
+        $invalidResult = $this->faker->word();
         $builder = $this->wordPress->posts()->builder();
 
         $this->expectException(RuntimeException::class);
 
-        $builder->content(static fn(ContentBuilder $builder): string => 'not a builder'); // @phpstan-ignore argument.type (runtime guard)
+        $builder->content(static fn(ContentBuilder $builder): string => $invalidResult); // @phpstan-ignore argument.type (runtime guard)
     }
 
     public function testStatusCanBeOverridden(): void
     {
-        $builder = $this->wordPress->posts()->builder()->title('Draft post')->status('draft');
+        $title = $this->faker->sentence(2);
+        $builder = $this->wordPress->posts()->builder()->title($title)->status('draft');
 
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['id' => 2], 201));
@@ -111,7 +120,7 @@ final class PostBuilderTest extends TestCase
 
         $builder->create();
 
-        $this->assertJsonBody($this->lastRequest(), ['title' => 'Draft post', 'status' => 'draft']);
+        $this->assertJsonBody($this->lastRequest(), ['title' => $title, 'status' => 'draft']);
     }
 
     public function testTitleIsRequired(): void
@@ -125,7 +134,8 @@ final class PostBuilderTest extends TestCase
 
     public function testFeaturedImageId(): void
     {
-        $builder = $this->wordPress->posts()->builder()->title('X')->featuredImageId(7);
+        $title = $this->faker->sentence(2);
+        $builder = $this->wordPress->posts()->builder()->title($title)->featuredImageId(7);
 
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['id' => 1], 201));
@@ -134,7 +144,7 @@ final class PostBuilderTest extends TestCase
         $builder->create();
 
         $this->assertJsonBody($this->lastRequest(), [
-            'title' => 'X',
+            'title' => $title,
             'featured_media' => 7,
             'status' => 'publish',
         ]);
@@ -142,12 +152,14 @@ final class PostBuilderTest extends TestCase
 
     public function testFeaturedImageUploadsViaMediaService(): void
     {
+        $title = $this->faker->sentence(2);
+        $altText = $this->faker->words(2, true);
         $file = tempnam(sys_get_temp_dir(), 'sdk-featured');
-        file_put_contents($file, 'img-data');
+        file_put_contents($file, $this->faker->text());
 
         try {
             $upload = new TestResponseSequence();
-            $upload->push(TestResponse::json(['id' => 21, 'source_url' => 'https://example.test/u.png'], 201));
+            $upload->push(TestResponse::json(['id' => 21, 'source_url' => $this->faker->imageUrl()], 201));
             $this->httpFakes()->respond('POST', '*wp/v2/media*', $upload);
 
             $create = new TestResponseSequence();
@@ -155,13 +167,13 @@ final class PostBuilderTest extends TestCase
             $this->httpFakes()->respond('POST', '*wp/v2/posts*', $create);
 
             $post = $this->wordPress->posts()->builder()
-                ->title('With image')
-                ->featuredImage($file, ['alt_text' => 'Alt'])
+                ->title($title)
+                ->featuredImage($file, ['alt_text' => $altText])
                 ->create();
 
             self::assertSame(1, $post->id);
             $this->assertJsonBody($this->lastRequest(), [
-                'title' => 'With image',
+                'title' => $title,
                 'featured_media' => 21,
                 'status' => 'publish',
             ]);
@@ -179,33 +191,38 @@ final class PostBuilderTest extends TestCase
 
         $this->expectException(RuntimeException::class);
 
-        $builder->featuredImage('/some/file.png');
+        $filePath = $this->faker->filePath();
+        self::assertIsString($filePath);
+        $builder->featuredImage($filePath);
     }
 
     public function testUpdateSendsPayloadAndExtras(): void
     {
-        $builder = $this->wordPress->posts()->builder()->title('Renamed');
+        $title = $this->faker->sentence(2);
+        $builder = $this->wordPress->posts()->builder()->title($title);
 
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 5, 'title' => ['rendered' => 'Renamed']]));
+        $sequence->push(TestResponse::json(['id' => 5, 'title' => ['rendered' => $title]]));
         $this->httpFakes()->respond('POST', '*wp/v2/posts/5*', $sequence);
 
         $post = $builder->update(5, ['status' => 'draft']);
 
         self::assertSame(5, $post->id);
         $this->assertJsonBody($this->lastRequest(), [
-            'title' => 'Renamed',
+            'title' => $title,
             'status' => 'draft',
         ]);
     }
 
     public function testToArrayExposesPayload(): void
     {
-        $builder = $this->wordPress->posts()->builder()->title('X')->slug('x');
+        $title = $this->faker->sentence(2);
+        $slug = $this->faker->slug();
+        $builder = $this->wordPress->posts()->builder()->title($title)->slug($slug);
 
         self::assertSame([
-            'title' => 'X',
-            'slug' => 'x',
+            'title' => $title,
+            'slug' => $slug,
             'status' => 'publish',
         ], $builder->toArray());
     }

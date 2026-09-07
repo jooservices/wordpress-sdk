@@ -24,69 +24,75 @@ final class AbstractStringKeyServiceTest extends TestCase
 
     public function testTaxonomiesGetBySlug(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['slug' => 'category', 'name' => 'Categories']));
+        $sequence->push(TestResponse::json(['slug' => 'category', 'name' => $name]));
         $this->httpFakes()->respond('GET', '*wp/v2/taxonomies/category*', $sequence);
 
         $taxonomy = $this->wordPress->taxonomies()->get('category');
 
         self::assertInstanceOf(Taxonomy::class, $taxonomy);
-        self::assertSame('Categories', $taxonomy->name);
+        self::assertSame($name, $taxonomy->name);
         self::assertSame('/wp-json/wp/v2/taxonomies/category', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testTaxonomiesGetEncodesSpecialCharactersInSlug(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['slug' => 'a b', 'name' => 'Spaced']));
+        $sequence->push(TestResponse::json(['slug' => 'a b', 'name' => $name]));
         $this->httpFakes()->respond('GET', '*wp/v2/taxonomies/a%20b*', $sequence);
 
         $taxonomy = $this->wordPress->taxonomies()->get('a b');
 
-        self::assertSame('Spaced', $taxonomy->name);
+        self::assertSame($name, $taxonomy->name);
         self::assertSame('/wp-json/wp/v2/taxonomies/a%20b', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testTaxonomiesListHandlesAssocPayload(): void
     {
+        $categoryName = $this->faker->word();
+        $tagName = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
-            'category' => ['slug' => 'category', 'name' => 'Categories'],
-            'post_tag' => ['slug' => 'post_tag', 'name' => 'Tags'],
+            'category' => ['slug' => 'category', 'name' => $categoryName],
+            'post_tag' => ['slug' => 'post_tag', 'name' => $tagName],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/taxonomies*', $sequence);
 
         $taxonomies = $this->wordPress->taxonomies()->list();
 
         self::assertCount(2, $taxonomies);
-        self::assertSame('Categories', $taxonomies->all()[0]->name);
+        self::assertSame($categoryName, $taxonomies->all()[0]->name);
     }
 
     public function testPostTypesGetBySlug(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['slug' => 'post', 'name' => 'Posts']));
+        $sequence->push(TestResponse::json(['slug' => 'post', 'name' => $name]));
         $this->httpFakes()->respond('GET', '*wp/v2/types/post*', $sequence);
 
         $postType = $this->wordPress->postTypes()->get('post');
 
         self::assertInstanceOf(PostType::class, $postType);
-        self::assertSame('Posts', $postType->name);
+        self::assertSame($name, $postType->name);
         self::assertSame('/wp-json/wp/v2/types/post', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testPostTypesListHandlesAssocPayload(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
-            'post' => ['slug' => 'post', 'name' => 'Posts'],
+            'post' => ['slug' => 'post', 'name' => $name],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/types*', $sequence);
 
         $types = $this->wordPress->postTypes()->list();
 
         self::assertCount(1, $types);
-        self::assertSame('Posts', $types->all()[0]->name);
+        self::assertSame($name, $types->all()[0]->name);
     }
 
     public function testStatusesGetBySlug(): void
@@ -104,10 +110,12 @@ final class AbstractStringKeyServiceTest extends TestCase
 
     public function testStatusesListHandlesAssocPayload(): void
     {
+        $publishName = $this->faker->word();
+        $draftName = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
-            'publish' => ['name' => 'Publish', 'public' => true],
-            'draft' => ['name' => 'Draft'],
+            'publish' => ['name' => $publishName, 'public' => true],
+            'draft' => ['name' => $draftName],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/statuses*', $sequence);
 
@@ -119,10 +127,12 @@ final class AbstractStringKeyServiceTest extends TestCase
 
     public function testSchemaServicesStreamHelpers(): void
     {
+        $postName = $this->faker->word();
+        $pageName = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
-            'post' => ['slug' => 'post', 'name' => 'Posts'],
-            'page' => ['slug' => 'page', 'name' => 'Pages'],
+            'post' => ['slug' => 'post', 'name' => $postName],
+            'page' => ['slug' => 'page', 'name' => $pageName],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/types*', $sequence);
 

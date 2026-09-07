@@ -9,16 +9,31 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class SearchResultTest extends TestCase
 {
-    public function testAcceptsStringIdentifier(): void
+    public function testCastsNumericStringIdentifierToInteger(): void
     {
+        $id = $this->faker->numberBetween(1);
         $result = SearchResult::from([
-            'id' => 'plugin/acme',
+            'id' => (string) $id,
             'title' => $this->faker->sentence(2),
             'url' => $this->faker->url(),
-            'type' => 'post',
-            'subtype' => 'plugin',
+            'type' => $this->faker->word(),
+            'subtype' => $this->faker->word(),
         ]);
 
-        self::assertSame('plugin/acme', $result->id);
+        self::assertSame($id, $result->id);
+    }
+
+    public function testPreservesStringIdentifier(): void
+    {
+        $id = $this->faker->slug();
+        $result = SearchResult::from([
+            'id' => $id,
+            'title' => $this->faker->sentence(2),
+            'url' => $this->faker->url(),
+            'type' => $this->faker->word(),
+            'subtype' => $this->faker->word(),
+        ]);
+
+        self::assertSame($id, $result->id);
     }
 }

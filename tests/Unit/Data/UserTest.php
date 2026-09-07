@@ -270,7 +270,7 @@ final class UserTest extends TestCase
             'subtype' => 'post',
         ]);
 
-        self::assertSame('12', $result->id);
+        self::assertSame(12, $result->id);
         self::assertSame('Found', $result->title);
         self::assertSame('post', $result->type);
     }

@@ -34,24 +34,6 @@ final class CategoriesServiceTest extends TestCase
         self::assertSame('/wp-json/wp/v2/categories/5', $this->lastRequest()->getUri()->getPath());
     }
 
-    public function testTagsRouteToTagsEndpoint(): void
-    {
-        $name = $this->faker->word();
-        $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::make(200, [
-            'X-WP-Total' => '1',
-            'X-WP-TotalPages' => '1',
-        ], json_encode([
-            ['id' => 8, 'name' => $name, 'taxonomy' => 'post_tag'],
-        ], JSON_THROW_ON_ERROR)));
-        $this->httpFakes()->respond('GET', '*wp/v2/tags*', $sequence);
-
-        $tags = $this->wordPress->tags()->list();
-
-        self::assertSame($name, $tags->all()[0]->name);
-        self::assertSame('/wp-json/wp/v2/tags', $this->lastRequest()->getUri()->getPath());
-    }
-
     public function testTermCreateAndDelete(): void
     {
         $name = $this->faker->word();

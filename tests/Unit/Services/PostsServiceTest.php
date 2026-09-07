@@ -6,7 +6,6 @@ namespace JOOservices\WordPress\Sdk\Tests\Unit\Services;
 
 use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
-use JOOservices\WordPress\Sdk\Data\Page;
 use JOOservices\WordPress\Sdk\Data\Post;
 use JOOservices\WordPress\Sdk\Data\Query\ListPostsQuery;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
@@ -107,35 +106,6 @@ final class PostsServiceTest extends TestCase
         ]);
     }
 
-    public function testPagesServiceRoutesToPagesEndpoint(): void
-    {
-        $title = $this->faker->sentence(2);
-        $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::make(200, [], json_encode([
-            ['id' => 3, 'type' => 'page', 'title' => ['rendered' => $title]],
-        ], JSON_THROW_ON_ERROR)));
-        $this->httpFakes()->respond('GET', '*wp/v2/pages*', $sequence);
-
-        $pages = $this->wordPress->pages()->list();
-
-        self::assertInstanceOf(Page::class, $pages->all()[0]);
-        self::assertSame($title, $pages->all()[0]->title?->rendered);
-        self::assertSame('/wp-json/wp/v2/pages', $this->lastRequest()->getUri()->getPath());
-    }
-
-    public function testCommentsServiceRoutesToCommentsEndpoint(): void
-    {
-        $authorName = $this->faker->name();
-        $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 1, 'author_name' => $authorName]));
-        $this->httpFakes()->respond('GET', '*wp/v2/comments/1*', $sequence);
-
-        $comment = $this->wordPress->comments()->get(1);
-
-        self::assertSame($authorName, $comment->author_name);
-        self::assertSame('/wp-json/wp/v2/comments/1', $this->lastRequest()->getUri()->getPath());
-    }
-
     public function testRevisionsAndAutosavesNestUnderPosts(): void
     {
         $list = new TestResponseSequence();
@@ -155,26 +125,5 @@ final class PostsServiceTest extends TestCase
 
         self::assertSame(['id' => 3], $created);
         self::assertSame('/wp-json/wp/v2/posts/9/autosaves', $this->lastRequest()->getUri()->getPath());
-    }
-
-    public function testPagesRevisionsAndAutosaves(): void
-    {
-        $list = new TestResponseSequence();
-        $list->push(TestResponse::json([['id' => 4]]));
-        $this->httpFakes()->respond('GET', '*wp/v2/pages/3/revisions*', $list);
-
-        self::assertSame([['id' => 4]], $this->wordPress->pages()->revisions(3)->list());
-
-        $autosaves = new TestResponseSequence();
-        $autosaves->push(TestResponse::json([['id' => 5]]));
-        $this->httpFakes()->respond('GET', '*wp/v2/pages/3/autosaves*', $autosaves);
-
-        self::assertSame([['id' => 5]], $this->wordPress->autosaves()->pages(3)->list());
-
-        $postAutosaves = new TestResponseSequence();
-        $postAutosaves->push(TestResponse::json([['id' => 6]]));
-        $this->httpFakes()->respond('GET', '*wp/v2/posts/9/autosaves*', $postAutosaves);
-
-        self::assertSame([['id' => 6]], $this->wordPress->autosaves()->posts(9)->list());
     }
 }

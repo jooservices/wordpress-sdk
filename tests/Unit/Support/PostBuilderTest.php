@@ -22,7 +22,7 @@ final class PostBuilderTest extends TestCase
         $this->wordPress = $this->wordPress();
     }
 
-    public function testBuildsPublishPayloadWithDefaults(): void
+    public function testBuildsDraftPayloadByDefault(): void
     {
         $title = $this->faker->sentence(3);
         $content = sprintf('<p>%s</p>', $this->faker->sentence());
@@ -50,7 +50,7 @@ final class PostBuilderTest extends TestCase
             'categories' => [1, 2],
             'tags' => [3],
             'author' => 4,
-            'status' => 'publish',
+            'status' => 'draft',
         ]);
     }
 
@@ -72,7 +72,7 @@ final class PostBuilderTest extends TestCase
         $this->assertJsonBody($this->lastRequest(), [
             'title' => $title,
             'content' => "<!-- wp:paragraph -->\n<p>{$text}</p>\n<!-- /wp:paragraph -->",
-            'status' => 'publish',
+            'status' => 'draft',
         ]);
     }
 
@@ -95,7 +95,7 @@ final class PostBuilderTest extends TestCase
         $this->assertJsonBody($this->lastRequest(), [
             'title' => $title,
             'content' => "<!-- wp:heading -->\n<h2>{$heading}</h2>\n<!-- /wp:heading -->",
-            'status' => 'publish',
+            'status' => 'draft',
         ]);
     }
 
@@ -112,7 +112,7 @@ final class PostBuilderTest extends TestCase
     public function testStatusCanBeOverridden(): void
     {
         $title = $this->faker->sentence(2);
-        $builder = $this->wordPress->posts()->builder()->title($title)->status('draft');
+        $builder = $this->wordPress->posts()->builder()->title($title)->status('publish');
 
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['id' => 2], 201));
@@ -120,7 +120,7 @@ final class PostBuilderTest extends TestCase
 
         $builder->create();
 
-        $this->assertJsonBody($this->lastRequest(), ['title' => $title, 'status' => 'draft']);
+        $this->assertJsonBody($this->lastRequest(), ['title' => $title, 'status' => 'publish']);
     }
 
     public function testTitleIsRequired(): void
@@ -146,7 +146,7 @@ final class PostBuilderTest extends TestCase
         $this->assertJsonBody($this->lastRequest(), [
             'title' => $title,
             'featured_media' => 7,
-            'status' => 'publish',
+            'status' => 'draft',
         ]);
     }
 
@@ -175,7 +175,7 @@ final class PostBuilderTest extends TestCase
             $this->assertJsonBody($this->lastRequest(), [
                 'title' => $title,
                 'featured_media' => 21,
-                'status' => 'publish',
+                'status' => 'draft',
             ]);
         } finally {
             unlink($file);
@@ -214,6 +214,18 @@ final class PostBuilderTest extends TestCase
         ]);
     }
 
+    public function testUpdateWithoutStatusDoesNotChangePublicationState(): void
+    {
+        $title = $this->faker->sentence(2);
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['id' => 5, 'title' => ['rendered' => $title]]));
+        $this->httpFakes()->respond('POST', '*wp/v2/posts/5*', $sequence);
+
+        $this->wordPress->posts()->builder()->title($title)->update(5);
+
+        $this->assertJsonBody($this->lastRequest(), ['title' => $title]);
+    }
+
     public function testToArrayExposesPayload(): void
     {
         $title = $this->faker->sentence(2);
@@ -223,7 +235,7 @@ final class PostBuilderTest extends TestCase
         self::assertSame([
             'title' => $title,
             'slug' => $slug,
-            'status' => 'publish',
+            'status' => 'draft',
         ], $builder->toArray());
     }
 }

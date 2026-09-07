@@ -15,6 +15,7 @@ final class Button extends AbstractBlock
         public readonly string $text,
         public readonly string $url = '',
         public readonly array $attributes = [],
+        private readonly bool $escapeText = true,
     ) {}
 
     protected function getName(): string
@@ -35,7 +36,9 @@ final class Button extends AbstractBlock
         return sprintf(
             '<div class="wp-block-button"><a class="wp-block-button__link wp-element-button" href="%s">%s</a></div>',
             htmlspecialchars($this->url, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            $this->text,
+            $this->escapeText
+                ? htmlspecialchars($this->text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+                : $this->text,
         );
     }
 }

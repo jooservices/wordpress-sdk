@@ -8,6 +8,7 @@ use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Data\Post;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
+use JOOservices\WordPress\Sdk\Exceptions\ServerException;
 use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
@@ -111,6 +112,45 @@ final class AbstractServiceTest extends TestCase
         self::assertSame(0, $post->id);
     }
 
+    public function testDeleteRejectsMalformedJsonResponse(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::make(200, [], '{invalid'));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        $this->expectException(ServerException::class);
+
+        $this->service->delete(5);
+    }
+
+    public function testDeleteRejectsUnexpectedJsonShape(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::make(200, [], json_encode($this->faker->word(), JSON_THROW_ON_ERROR)));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        $this->expectException(ServerException::class);
+
+        $this->service->delete(5);
+    }
+
+    public function testDeleteRejectsJsonLists(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json([]));
+        $sequence->push(TestResponse::json([['id' => $this->faker->numberBetween(1)]]));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        foreach (range(1, 2) as $attempt) {
+            try {
+                $this->service->delete(5);
+                self::fail(sprintf('Expected JSON list response %d to be rejected.', $attempt));
+            } catch (ServerException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testCursorStreamsAcrossPages(): void
     {
         $this->respondPages(3, 2);
@@ -128,6 +168,15 @@ final class AbstractServiceTest extends TestCase
         $this->respondPages(5, 2);
 
         $posts = iterator_to_array($this->service->cursor(['per_page' => 2, 'page' => 2]), false);
+
+        self::assertSame([3, 4, 5], array_map(static fn(Post $post): int => $post->id, $posts));
+    }
+
+    public function testCursorHonorsNumericStringStartPage(): void
+    {
+        $this->respondPages(5, 2);
+
+        $posts = iterator_to_array($this->service->cursor(['per_page' => 2, 'page' => '2']), false);
 
         self::assertSame([3, 4, 5], array_map(static fn(Post $post): int => $post->id, $posts));
     }

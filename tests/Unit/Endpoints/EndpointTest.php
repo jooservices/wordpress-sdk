@@ -20,6 +20,10 @@ final class EndpointTest extends TestCase
     {
         self::assertSame('wp/v2/posts/42', Endpoint::POSTS->withId(42));
         self::assertSame('wp/v2/templates/my-template', Endpoint::TEMPLATES->withId('my-template'));
+        self::assertSame(
+            'wp/v2/global-styles/x%2Fy%3Fcontext%3Dedit',
+            Endpoint::GLOBAL_STYLES->withId('x/y?context=edit'),
+        );
     }
 
     public function testWithKey(): void
@@ -68,6 +72,10 @@ final class EndpointTest extends TestCase
     public function testWithChildBuildsNestedSubresourcePaths(): void
     {
         self::assertSame('wp/v2/posts/9/revisions', Endpoint::POSTS->withChild(9, 'revisions'));
+        self::assertSame(
+            'wp/v2/users/me%2Fadmin/application-passwords%3Fcontext%3Dedit',
+            Endpoint::USERS->withChild('me/admin', 'application-passwords?context=edit'),
+        );
         self::assertSame(
             'wp/v2/font-families/1/font-faces',
             Endpoint::FONT_FAMILIES->withChild(1, 'font-faces'),

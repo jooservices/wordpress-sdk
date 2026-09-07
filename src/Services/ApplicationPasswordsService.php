@@ -58,15 +58,17 @@ final class ApplicationPasswordsService extends AbstractService
         );
     }
 
-    /**
-     * @return array<string, mixed>
-     */
+    /** @return array<string, mixed> */
     public function delete(int|string $userId, string $uuid): array
     {
         return $this->requestArray('DELETE', $this->path($userId, $uuid));
     }
 
     /**
+     * Permanently revokes every application password for the selected user.
+     * This bulk operation cannot be undone; callers must obtain confirmation
+     * before invoking it from an interactive workflow.
+     *
      * @return array<string, mixed>
      */
     public function deleteAll(int|string $userId): array
@@ -84,6 +86,6 @@ final class ApplicationPasswordsService extends AbstractService
     {
         $path = Endpoint::USERS->withChild($userId, 'application-passwords');
 
-        return $uuid === null ? $path : $path . '/' . $uuid;
+        return $uuid === null ? $path : $path . '/' . rawurlencode($uuid);
     }
 }

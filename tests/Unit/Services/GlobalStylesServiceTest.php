@@ -32,4 +32,19 @@ final class GlobalStylesServiceTest extends TestCase
         $this->httpFakes()->respond('POST', '*wp/v2/global-styles/1*', $update);
         self::assertSame(['id' => 1], $this->wordPress()->globalStyles()->update(1, ['settings' => []]));
     }
+
+    public function testEncodesStringIdAsOnePathSegment(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['id' => $this->faker->uuid()]));
+        $this->httpFakes()->respond('GET', '*', $sequence);
+
+        $this->wordPress()->globalStyles()->get('x/y?context=edit');
+
+        self::assertSame(
+            '/wp-json/wp/v2/global-styles/x%2Fy%3Fcontext%3Dedit',
+            $this->lastRequest()->getUri()->getPath(),
+        );
+        self::assertSame('', $this->lastRequest()->getUri()->getQuery());
+    }
 }

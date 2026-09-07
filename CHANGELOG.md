@@ -26,9 +26,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `MediaService::create()` rejects JSON POSTs; use `upload()`.
+- `PostBuilder` now defaults new posts to WordPress-safe `draft` status;
+  publishing must be requested explicitly.
 - Core-route completeness auditing moved from the production namespace to
   test-only support.
 - README identity, badges, and WordPress E2E image pin `wordpress:7.1.0`.
+
+### Fixed
+
+- Reject malformed or unexpected JSON response bodies instead of silently
+  returning empty data.
+- Parse nested Gutenberg blocks in linear time without global tokenizer state.
+
+### Security
+
+- Escape paragraph, heading, and button text by default when rendering blocks.
+- Encode dynamic REST path segments and reject encoded traversal segments.
+- Document the irreversible, destructive behavior of
+  `ApplicationPasswordsService::deleteAll()`.
 
 ## [4.0.0] - 2026-09-04
 

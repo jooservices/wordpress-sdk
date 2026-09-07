@@ -25,4 +25,16 @@ final class HeadingTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
         new Heading($this->faker->sentence(), 7);
     }
+
+    public function testEscapesUntrustedText(): void
+    {
+        $payload = sprintf('<img src=x onerror="%s">', $this->faker->word());
+        $rendered = (new Heading($payload))->render();
+
+        self::assertStringContainsString(
+            htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            $rendered,
+        );
+        self::assertStringNotContainsString($payload, $rendered);
+    }
 }

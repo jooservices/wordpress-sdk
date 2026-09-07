@@ -31,8 +31,16 @@ final class RestPath
         $collapsed = preg_replace('#/+#', '/', $path) ?? '/';
 
         foreach (explode('/', $collapsed) as $segment) {
-            if ($segment === '.' || $segment === '..') {
-                throw new InvalidArgumentException('REST paths cannot contain dot segments.');
+            $decoded = $segment;
+            do {
+                $previous = $decoded;
+                $decoded = rawurldecode($decoded);
+            } while ($decoded !== $previous);
+
+            foreach (explode('/', $decoded) as $decodedSegment) {
+                if ($decodedSegment === '.' || $decodedSegment === '..') {
+                    throw new InvalidArgumentException('REST paths cannot contain dot segments.');
+                }
             }
         }
 

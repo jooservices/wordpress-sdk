@@ -2,9 +2,10 @@
 
 declare(strict_types=1);
 
-namespace JOOservices\WordPress\Sdk\Support;
+namespace JOOservices\WordPress\Sdk\Tests\Support;
 
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
+use JOOservices\WordPress\Sdk\Support\PostBackedResources;
 
 /**
  * Audits a WordPress discovery document against routes the SDK actually

@@ -22,4 +22,14 @@ final class TermTest extends TestCase
         self::assertSame($name, $term->name);
         self::assertSame('category', $term->taxonomy);
     }
+
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['wp:post_type' => [['id' => $this->faker->numberBetween(1)]]];
+        $term = Term::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $term->_links);
+        self::assertSame($embedded, $term->_embedded);
+    }
 }

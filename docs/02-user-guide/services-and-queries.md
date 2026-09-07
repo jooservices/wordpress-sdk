@@ -50,6 +50,9 @@ All query DTOs share: `page`, `perPage`, `offset`, `search`, `context`,
 `orderby`, `order`, `include`, `exclude`, `fields` (→ `_fields`), `embed` (→
 `_embed`). Hierarchical taxonomies ignore `offset`.
 
+When `embed` is enabled, typed list DTOs preserve WordPress response metadata
+in their `_links` and `_embedded` array properties.
+
 ## Raw custom endpoints
 
 Paths are relative to the configured REST root. Absolute URLs are rejected.

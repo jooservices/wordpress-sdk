@@ -13,6 +13,8 @@ final class Term extends Dto
 {
     /**
      * @param array<string, mixed> $meta
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
      */
     public function __construct(
         public readonly int $id = 0,
@@ -24,5 +26,7 @@ final class Term extends Dto
         public readonly string $taxonomy = '',
         public readonly int $parent = 0,
         public readonly array $meta = [],
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
 }

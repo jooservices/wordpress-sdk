@@ -8,7 +8,7 @@ use Faker\Factory;
 use Faker\Generator;
 use JOOservices\Client\Resilience\RetryConfig;
 use JOOservices\WordPress\Sdk\WordPressService;
-use JOOservices\WordPress\Sdk\Support\CoreRouteSupport;
+use JOOservices\WordPress\Sdk\Tests\Support\CoreRouteSupport;
 use PHPUnit\Framework\TestCase;
 
 final class WordPressIntegrationTest extends TestCase

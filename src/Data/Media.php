@@ -14,6 +14,8 @@ final class Media extends Dto
     /**
      * @param array<string, mixed> $media_details
      * @param array<string, mixed> $meta
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
      */
     public function __construct(
         public readonly int $id = 0,
@@ -40,5 +42,7 @@ final class Media extends Dto
         public readonly string $ping_status = '',
         public readonly string $template = '',
         public readonly array $meta = [],
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
 }

@@ -59,6 +59,26 @@ final class PostsServiceTest extends TestCase
         $this->assertQuery($this->lastRequest(), ['context' => 'edit']);
     }
 
+    public function testListPreservesEmbeddedDataWhenRequested(): void
+    {
+        $authorName = $this->faker->name();
+        $embedded = ['author' => [['id' => $this->faker->numberBetween(1), 'name' => $authorName]]];
+        $links = ['author' => [['href' => $this->faker->url(), 'embeddable' => true]]];
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json([[
+            'id' => $this->faker->numberBetween(1),
+            '_embedded' => $embedded,
+            '_links' => $links,
+        ]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/posts*', $sequence);
+
+        $post = $this->wordPress->posts()->list(new ListPostsQuery(embed: true))->all()[0];
+
+        self::assertSame($embedded, $post->_embedded);
+        self::assertSame($links, $post->_links);
+        $this->assertQuery($this->lastRequest(), ['_embed' => 'true']);
+    }
+
     public function testCreatePostsJsonPayload(): void
     {
         $sequence = new TestResponseSequence();

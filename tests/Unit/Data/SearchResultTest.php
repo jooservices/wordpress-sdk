@@ -9,6 +9,16 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class SearchResultTest extends TestCase
 {
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['self' => [['id' => $this->faker->numberBetween(1)]]];
+        $result = SearchResult::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $result->_links);
+        self::assertSame($embedded, $result->_embedded);
+    }
+
     public function testHydratesWordPressPayload(): void
     {
         $title = $this->faker->sentence(2);

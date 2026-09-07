@@ -8,7 +8,8 @@
 [![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Strictly typed PHP 8.5 SDK for the WordPress REST API.
+PHP 8.5 SDK with typed DTOs for stable WordPress REST resources and documented
+raw-array access for dynamic admin/editor schemas.
 
 Package: `jooservices/wordpress-sdk` · v4.0.0 (ground-up rebuild)
 

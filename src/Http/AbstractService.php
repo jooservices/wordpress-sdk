@@ -126,7 +126,7 @@ abstract class AbstractService
      */
     protected function deleteAndDecode(string $uri, string $dtoClass, array $options = []): object
     {
-        $data = $this->decodeArrayResponse($this->request('DELETE', $uri, $options));
+        $data = $this->decodeArrayResponse($this->request('DELETE', $uri, $options), allowList: false);
         if ($data === []) {
             return $this->decoder->deserialize([], $dtoClass);
         }
@@ -273,7 +273,7 @@ abstract class AbstractService
     /**
      * @return array<string, mixed>
      */
-    private function decodeArrayResponse(ResponseInterface $response): array
+    private function decodeArrayResponse(ResponseInterface $response, bool $allowList = true): array
     {
         $body = (string) $response->getBody();
         if (trim($body) === '') {
@@ -291,6 +291,10 @@ abstract class AbstractService
 
         if (! is_array($decoded)) {
             throw new ServerException('WordPress returned a JSON response with an unexpected shape.');
+        }
+
+        if (! $allowList && str_starts_with(ltrim($body), '[')) {
+            throw new ServerException('WordPress returned a JSON list where an object was expected.');
         }
 
         /** @var array<string, mixed> $decoded */

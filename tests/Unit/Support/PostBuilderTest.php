@@ -214,6 +214,18 @@ final class PostBuilderTest extends TestCase
         ]);
     }
 
+    public function testUpdateWithoutStatusDoesNotChangePublicationState(): void
+    {
+        $title = $this->faker->sentence(2);
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['id' => 5, 'title' => ['rendered' => $title]]));
+        $this->httpFakes()->respond('POST', '*wp/v2/posts/5*', $sequence);
+
+        $this->wordPress->posts()->builder()->title($title)->update(5);
+
+        $this->assertJsonBody($this->lastRequest(), ['title' => $title]);
+    }
+
     public function testToArrayExposesPayload(): void
     {
         $title = $this->faker->sentence(2);

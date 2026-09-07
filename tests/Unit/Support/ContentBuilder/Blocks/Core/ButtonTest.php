@@ -28,10 +28,12 @@ final class ButtonTest extends TestCase
     public function testEscapesUntrustedText(): void
     {
         $payload = sprintf('<svg onload="%s">', $this->faker->word());
+        $rendered = (new Button($payload, $this->faker->url()))->render();
 
         self::assertStringContainsString(
             htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            (new Button($payload, $this->faker->url()))->render(),
+            $rendered,
         );
+        self::assertStringNotContainsString($payload, $rendered);
     }
 }

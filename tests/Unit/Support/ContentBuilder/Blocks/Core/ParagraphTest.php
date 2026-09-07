@@ -24,10 +24,12 @@ final class ParagraphTest extends TestCase
     public function testEscapesUntrustedText(): void
     {
         $payload = sprintf('<script>alert("%s")</script>', $this->faker->word());
+        $rendered = (new Paragraph($payload))->render();
 
         self::assertStringContainsString(
             htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            (new Paragraph($payload))->render(),
+            $rendered,
         );
+        self::assertStringNotContainsString($payload, $rendered);
     }
 }

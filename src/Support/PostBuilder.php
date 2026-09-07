@@ -161,7 +161,7 @@ final class PostBuilder
     public function update(int $id, array $extra = []): Post
     {
         /** @var Post */
-        return $this->postsService->update($id, [...$this->payload(), ...$extra]);
+        return $this->postsService->update($id, [...$this->data, ...$extra]);
     }
 
     /**

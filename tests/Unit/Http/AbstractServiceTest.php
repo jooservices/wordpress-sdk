@@ -134,6 +134,23 @@ final class AbstractServiceTest extends TestCase
         $this->service->delete(5);
     }
 
+    public function testDeleteRejectsJsonLists(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json([]));
+        $sequence->push(TestResponse::json([['id' => $this->faker->numberBetween(1)]]));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        foreach (range(1, 2) as $attempt) {
+            try {
+                $this->service->delete(5);
+                self::fail(sprintf('Expected JSON list response %d to be rejected.', $attempt));
+            } catch (ServerException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testCursorStreamsAcrossPages(): void
     {
         $this->respondPages(3, 2);

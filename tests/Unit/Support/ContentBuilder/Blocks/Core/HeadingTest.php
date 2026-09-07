@@ -29,10 +29,12 @@ final class HeadingTest extends TestCase
     public function testEscapesUntrustedText(): void
     {
         $payload = sprintf('<img src=x onerror="%s">', $this->faker->word());
+        $rendered = (new Heading($payload))->render();
 
         self::assertStringContainsString(
             htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
-            (new Heading($payload))->render(),
+            $rendered,
         );
+        self::assertStringNotContainsString($payload, $rendered);
     }
 }

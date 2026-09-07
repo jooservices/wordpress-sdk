@@ -26,6 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 
 - `MediaService::create()` rejects JSON POSTs; use `upload()`.
+- Core-route completeness auditing moved from the production namespace to
+  test-only support.
 - README identity, badges, and WordPress E2E image pin `wordpress:7.1.0`.
 
 ## [4.0.0] - 2026-09-04

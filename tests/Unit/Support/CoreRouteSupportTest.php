@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Tests\Unit\Support;
 
-use JOOservices\WordPress\Sdk\Support\CoreRouteSupport;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
+use JOOservices\WordPress\Sdk\Tests\Support\CoreRouteSupport;
 
 final class CoreRouteSupportTest extends TestCase
 {

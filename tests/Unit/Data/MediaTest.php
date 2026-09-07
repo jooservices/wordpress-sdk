@@ -55,4 +55,14 @@ final class MediaTest extends TestCase
 
         self::assertNull($media->date_gmt);
     }
+
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['author' => [['id' => $this->faker->numberBetween(1)]]];
+        $media = Media::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $media->_links);
+        self::assertSame($embedded, $media->_embedded);
+    }
 }

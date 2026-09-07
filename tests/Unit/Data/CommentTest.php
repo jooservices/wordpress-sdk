@@ -44,4 +44,14 @@ final class CommentTest extends TestCase
         self::assertSame('127.0.0.1', $comment->author_ip);
         self::assertSame('PHPUnit', $comment->author_user_agent);
     }
+
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['up' => [['id' => $this->faker->numberBetween(1)]]];
+        $comment = Comment::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $comment->_links);
+        self::assertSame($embedded, $comment->_embedded);
+    }
 }

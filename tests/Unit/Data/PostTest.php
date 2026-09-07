@@ -58,9 +58,19 @@ final class PostTest extends TestCase
         self::assertNull(Post::from(['id' => 1, 'featured_media' => null])->featured_media);
     }
 
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['author' => [['id' => $this->faker->numberBetween(1)]]];
+        $post = Post::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $post->_links);
+        self::assertSame($embedded, $post->_embedded);
+    }
+
     public function testIgnoresUnknownKeys(): void
     {
-        $post = Post::from(['id' => 1, '_links' => ['self' => [['href' => $this->faker->url()]]], 'junk' => $this->faker->word()]);
+        $post = Post::from(['id' => 1, 'junk' => $this->faker->word()]);
         self::assertSame(1, $post->id);
     }
 

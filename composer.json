@@ -1,6 +1,6 @@
 {
     "name": "jooservices/wordpress-sdk",
-    "description": "A strictly-typed, SOLID-compliant PHP 8.5 SDK for the WordPress REST API",
+    "description": "A PHP 8.5 SDK with typed DTOs for stable WordPress REST resources",
     "type": "library",
     "keywords": [
         "wordpress",

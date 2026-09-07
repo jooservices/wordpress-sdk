@@ -62,4 +62,14 @@ final class UserTest extends TestCase
     {
         self::assertNull(User::from(['id' => 1, 'slug' => $this->faker->slug()])->username);
     }
+
+    public function testPreservesEmbeddedRestMetadata(): void
+    {
+        $links = ['self' => [['href' => $this->faker->url()]]];
+        $embedded = ['collection' => [['href' => $this->faker->url()]]];
+        $user = User::from(['_links' => $links, '_embedded' => $embedded]);
+
+        self::assertSame($links, $user->_links);
+        self::assertSame($embedded, $user->_embedded);
+    }
 }

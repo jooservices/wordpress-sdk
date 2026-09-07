@@ -33,7 +33,7 @@ Actions weekly.
 | `semantic-pr.yml` | PR opened, edited, synchronized, reopened | Validate PR title; skipped for Dependabot |
 | `pr-labeler.yml` | PR opened, synchronized, reopened | Apply labels from `.github/labeler.yml` |
 | `link-check.yml` | Monday 04:00 UTC; manual | Lychee Markdown link check |
-| `scorecard.yml` | Push to `master`; Monday 00:00 UTC; manual | OpenSSF Scorecard → SARIF upload |
+| `scorecard.yml` | Push to `develop`; Monday 00:00 UTC; manual | OpenSSF Scorecard → SARIF upload |
 | `stale.yml` | Daily 01:00 UTC; manual | Stale after 60 days; close 14 days later |
 | `workflow-audit.yml` | Push/PR on `master` or `develop` when `.github/**` changes; Monday 03:00 UTC; manual | Actionlint + Zizmor |
 

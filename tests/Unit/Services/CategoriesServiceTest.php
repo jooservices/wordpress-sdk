@@ -22,46 +22,49 @@ final class CategoriesServiceTest extends TestCase
 
     public function testCategoriesRouteAndHydrateTerms(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 5, 'name' => 'News', 'taxonomy' => 'category']));
+        $sequence->push(TestResponse::json(['id' => 5, 'name' => $name, 'taxonomy' => 'category']));
         $this->httpFakes()->respond('GET', '*wp/v2/categories/5*', $sequence);
 
         $category = $this->wordPress->categories()->get(5);
 
         self::assertInstanceOf(Term::class, $category);
-        self::assertSame('News', $category->name);
+        self::assertSame($name, $category->name);
         self::assertSame('/wp-json/wp/v2/categories/5', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testTagsRouteToTagsEndpoint(): void
     {
+        $name = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [
             'X-WP-Total' => '1',
             'X-WP-TotalPages' => '1',
         ], json_encode([
-            ['id' => 8, 'name' => 'PHP', 'taxonomy' => 'post_tag'],
+            ['id' => 8, 'name' => $name, 'taxonomy' => 'post_tag'],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/tags*', $sequence);
 
         $tags = $this->wordPress->tags()->list();
 
-        self::assertSame('PHP', $tags->all()[0]->name);
+        self::assertSame($name, $tags->all()[0]->name);
         self::assertSame('/wp-json/wp/v2/tags', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testTermCreateAndDelete(): void
     {
+        $name = $this->faker->word();
         $create = new TestResponseSequence();
-        $create->push(TestResponse::json(['id' => 6, 'name' => 'Tech'], 201));
+        $create->push(TestResponse::json(['id' => 6, 'name' => $name], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/categories*', $create);
 
-        $category = $this->wordPress->categories()->create(['name' => 'Tech']);
+        $category = $this->wordPress->categories()->create(['name' => $name]);
 
         self::assertSame(6, $category->id);
 
         $delete = new TestResponseSequence();
-        $delete->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 6, 'name' => 'Tech']]));
+        $delete->push(TestResponse::json(['deleted' => true, 'previous' => ['id' => 6, 'name' => $name]]));
         $this->httpFakes()->respond('DELETE', '*wp/v2/categories/6*', $delete);
 
         $deleted = $this->wordPress->categories()->delete(6, force: true);

@@ -27,30 +27,33 @@ final class AbstractServiceTest extends TestCase
 
     public function testQueryOptionsAreAppendedToUri(): void
     {
+        $title = $this->faker->sentence(2);
+        $password = $this->faker->password();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 1, 'title' => ['rendered' => 'A']]));
+        $sequence->push(TestResponse::json(['id' => 1, 'title' => ['rendered' => $title]]));
         $this->httpFakes()->respond('GET', '*wp/v2/posts/1*', $sequence);
 
-        $post = $this->service->get(1, ['context' => 'edit', 'password' => 'x']);
+        $post = $this->service->get(1, ['context' => 'edit', 'password' => $password]);
 
         self::assertSame(1, $post->id);
-        $this->assertQuery($this->lastRequest(), ['context' => 'edit', 'password' => 'x']);
+        $this->assertQuery($this->lastRequest(), ['context' => 'edit', 'password' => $password]);
         self::assertSame('/wp-json/wp/v2/posts/1', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testJsonBodyOptionsAreSent(): void
     {
+        $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 9, 'title' => ['rendered' => 'New']], 201));
+        $sequence->push(TestResponse::json(['id' => 9, 'title' => ['rendered' => $title]], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
-        $post = $this->service->create(['title' => 'New', 'status' => 'publish']);
+        $post = $this->service->create(['title' => $title, 'status' => 'publish']);
 
         self::assertSame(9, $post->id);
         $request = $this->lastRequest();
         self::assertSame('POST', $request->getMethod());
         self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
-        $this->assertJsonBody($request, ['title' => 'New', 'status' => 'publish']);
+        $this->assertJsonBody($request, ['title' => $title, 'status' => 'publish']);
     }
 
     public function testErrorStatusThrowsMappedException(): void
@@ -70,17 +73,18 @@ final class AbstractServiceTest extends TestCase
 
     public function testDeleteUnwrapsForceDeletePayload(): void
     {
+        $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
             'deleted' => true,
-            'previous' => ['id' => 5, 'title' => ['rendered' => 'Gone']],
+            'previous' => ['id' => 5, 'title' => ['rendered' => $title]],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
 
         $post = $this->service->delete(5, force: true);
 
         self::assertSame(5, $post->id);
-        self::assertSame('Gone', $post->title?->rendered);
+        self::assertSame($title, $post->title?->rendered);
         $this->assertQuery($this->lastRequest(), ['force' => 'true']);
     }
 
@@ -185,7 +189,7 @@ final class AbstractServiceTest extends TestCase
         for ($page = 1; $page <= $totalPages; $page++) {
             $items = [];
             for ($i = ($page - 1) * $perPage + 1; $i <= min($total, $page * $perPage); $i++) {
-                $items[] = ['id' => $i, 'title' => ['rendered' => 'Post ' . $i]];
+                $items[] = ['id' => $i, 'title' => ['rendered' => $this->faker->sentence(2)]];
             }
 
             $sequence = new TestResponseSequence();

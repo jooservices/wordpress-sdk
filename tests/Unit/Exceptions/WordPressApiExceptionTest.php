@@ -21,11 +21,13 @@ final class WordPressApiExceptionTest extends TestCase
 {
     public function testBaseExceptionCarriesRawPayload(): void
     {
-        $exception = new WordPressApiException('Something failed', 418, ['code' => 'oops', 'data' => []]);
+        $message = $this->faker->word();
+        $wordPressCode = $this->faker->slug();
+        $exception = new WordPressApiException($message, 418, ['code' => $wordPressCode, 'data' => []]);
 
-        self::assertSame('Something failed', $exception->getMessage());
+        self::assertSame($message, $exception->getMessage());
         self::assertSame(418, $exception->getCode());
-        self::assertSame(['code' => 'oops', 'data' => []], $exception->data);
+        self::assertSame(['code' => $wordPressCode, 'data' => []], $exception->data);
         self::assertSame('wordpress.http.apierror', $exception->errorCode());
         self::assertArrayHasKey('error_code', $exception->toLogArray());
         self::assertSame('wordpress.http.apierror', $exception->toLogArray()['error_code']);
@@ -45,7 +47,7 @@ final class WordPressApiExceptionTest extends TestCase
         ];
 
         foreach ($cases as $class => [$code, $errorCode]) {
-            $exception = new $class('x', $code);
+            $exception = new $class($this->faker->sentence(), $code);
 
             self::assertSame($code, $exception->getCode());
             self::assertSame($errorCode, $exception->errorCode());
@@ -55,9 +57,10 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testValidationExceptionCarriesParamsMap(): void
     {
-        $exception = new ValidationException(['title' => 'Cannot be empty.']);
+        $parameterMessage = $this->faker->sentence();
+        $exception = new ValidationException(['title' => $parameterMessage]);
 
-        self::assertSame(['title' => 'Cannot be empty.'], $exception->params);
+        self::assertSame(['title' => $parameterMessage], $exception->params);
         self::assertSame(422, $exception->getCode());
         self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
         self::assertSame('wordpress.http.validation', $exception->errorCode());
@@ -65,62 +68,71 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testValidationExceptionPreservesFullPayloadWhenProvided(): void
     {
+        $message = $this->faker->sentence();
+        $parameterMessage = $this->faker->sentence();
         $payload = [
             'code' => 'rest_invalid_param',
-            'message' => 'Invalid parameter(s)',
+            'message' => $message,
             'data' => [
                 'status' => 422,
-                'params' => ['title' => 'Required'],
+                'params' => ['title' => $parameterMessage],
                 'details' => ['title' => ['code' => 'rest_missing_callback_param']],
             ],
         ];
-        $exception = new ValidationException(['title' => 'Required'], 'Invalid parameter(s)', 422, data: $payload);
+        $exception = new ValidationException(['title' => $parameterMessage], $message, 422, data: $payload);
 
         self::assertSame($payload, $exception->data);
-        self::assertSame(['title' => 'Required'], $exception->params);
+        self::assertSame(['title' => $parameterMessage], $exception->params);
     }
 
     public function testWithContextPreservesPayload(): void
     {
-        $exception = (new NotFoundException('missing', 404, ['code' => 'rest_post_invalid_id']))
-            ->withContext(['request_id' => 'abc']);
+        $requestId = $this->faker->uuid();
+        $exception = (new NotFoundException($this->faker->sentence(), 404, ['code' => 'rest_post_invalid_id']))
+            ->withContext(['request_id' => $requestId]);
 
         self::assertSame('rest_post_invalid_id', $exception->data['code'] ?? null);
-        self::assertSame('abc', $exception->getRawContext()['request_id'] ?? null);
+        self::assertSame($requestId, $exception->getRawContext()['request_id'] ?? null);
         self::assertSame('wordpress.http.notfound', $exception->errorCode());
     }
 
     public function testToArrayStructure(): void
     {
-        $exception = new WordPressApiException('Not found', 404, [
+        $message = $this->faker->word();
+        $exception = new WordPressApiException($message, 404, [
             'code' => 'rest_post_invalid_id',
-            'message' => 'Not found',
+            'message' => $message,
             'data' => ['status' => 404],
         ]);
 
         $array = $exception->toArray();
 
         self::assertSame(WordPressApiException::class, $array['type']);
-        self::assertSame('Not found', $array['message']);
+        self::assertSame($message, $array['message']);
         self::assertSame(404, $array['status_code']);
         self::assertSame('rest_post_invalid_id', $array['wordpress_code']);
         self::assertSame(['status' => 404], $array['wordpress_data']);
-        self::assertSame(['code' => 'rest_post_invalid_id', 'message' => 'Not found', 'data' => ['status' => 404]], $array['response']);
+        self::assertSame(
+            ['code' => 'rest_post_invalid_id', 'message' => $message, 'data' => ['status' => 404]],
+            $array['response'],
+        );
         self::assertNull($array['previous']);
         self::assertSame('wordpress.http.apierror', $array['error_code']);
     }
 
     public function testToArrayRedactsCredentials(): void
     {
-        $exception = new WordPressApiException('Denied', 403, [
+        $safeValue = $this->faker->word();
+        $nestedValue = $this->faker->word();
+        $exception = new WordPressApiException($this->faker->sentence(), 403, [
             'code' => 'rest_cookie_invalid_nonce',
-            'message' => 'Denied',
+            'message' => $this->faker->word(),
             'data' => [
                 'authorization' => 'Basic YWRtaW46cGFzcw==',
                 'password' => 'secret',
                 'application_password' => 'xxxx xxxx xxxx xxxx',
-                'safe' => 'keep me',
-                'nested' => ['token' => 'abc', 'keep' => 'value'],
+                'safe' => $safeValue,
+                'nested' => ['token' => 'abc', 'keep' => $nestedValue],
             ],
         ]);
 
@@ -132,15 +144,16 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertSame('(redacted)', $data['authorization'] ?? null);
         self::assertSame('(redacted)', $data['password'] ?? null);
         self::assertSame('(redacted)', $data['application_password'] ?? null);
-        self::assertSame('keep me', $data['safe'] ?? null);
+        self::assertSame($safeValue, $data['safe'] ?? null);
         self::assertSame('(redacted)', $nested['token'] ?? null);
-        self::assertSame('value', $nested['keep'] ?? null);
+        self::assertSame($nestedValue, $nested['keep'] ?? null);
     }
 
     public function testToArrayRedactsBasicAndBearerValues(): void
     {
-        $exception = new WordPressApiException('x', 401, [
-            'message' => 'x',
+        $message = $this->faker->sentence();
+        $exception = new WordPressApiException($message, 401, [
+            'message' => $message,
             'data' => ['header' => 'Basic dXNlcjpwYXNz'],
         ]);
 
@@ -148,8 +161,8 @@ final class WordPressApiExceptionTest extends TestCase
         $data = $exception->toArray()['wordpress_data'] ?? [];
         self::assertSame('(redacted)', $data['header'] ?? null);
 
-        $exception = new WordPressApiException('x', 401, [
-            'message' => 'x',
+        $exception = new WordPressApiException($message, 401, [
+            'message' => $message,
             'data' => ['header' => 'Bearer eyJhbGciOiJIUzI1NiJ9'],
         ]);
 
@@ -160,8 +173,9 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testToArrayRedactsAppPasswordShapedValues(): void
     {
-        $exception = new WordPressApiException('x', 400, [
-            'message' => 'x',
+        $message = $this->faker->sentence();
+        $exception = new WordPressApiException($message, 400, [
+            'message' => $message,
             'data' => ['value' => 'abcd efgh ijkl mnop'],
         ]);
 
@@ -177,7 +191,7 @@ final class WordPressApiExceptionTest extends TestCase
             $value = ['level' => $value];
         }
 
-        $exception = new WordPressApiException('x', 500, ['data' => $value]);
+        $exception = new WordPressApiException($this->faker->sentence(), 500, ['data' => $value]);
 
         $redacted = $exception->toArray()['wordpress_data'];
         for ($depth = 0; $depth < 9; $depth++) {
@@ -190,7 +204,7 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testToArrayRedactsAuthorizationSchemesCaseInsensitively(): void
     {
-        $exception = new WordPressApiException('x', 401, [
+        $exception = new WordPressApiException($this->faker->sentence(), 401, [
             'data' => ['header' => 'bearer token-value'],
         ]);
 
@@ -202,7 +216,7 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testToArrayWithoutPayload(): void
     {
-        $exception = new WordPressApiException('plain');
+        $exception = new WordPressApiException($this->faker->sentence());
 
         $array = $exception->toArray();
 
@@ -214,7 +228,12 @@ final class WordPressApiExceptionTest extends TestCase
 
     public function testToArrayReportsPrevious(): void
     {
-        $exception = new WordPressApiException('outer', 500, null, new LogicException('inner'));
+        $exception = new WordPressApiException(
+            $this->faker->sentence(),
+            500,
+            null,
+            new LogicException($this->faker->sentence()),
+        );
 
         self::assertSame(LogicException::class, $exception->toArray()['previous']);
     }

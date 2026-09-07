@@ -49,13 +49,14 @@ final class ErrorMapperTest extends TestCase
 
     public function testUsesWordPressMessage(): void
     {
+        $message = $this->faker->sentence();
         $exception = $this->mapper->map(TestResponse::make(404, [], json_encode([
             'code' => 'rest_post_invalid_id',
-            'message' => 'Invalid post ID.',
+            'message' => $message,
             'data' => ['status' => 404],
         ], JSON_THROW_ON_ERROR)));
 
-        self::assertSame('Invalid post ID.', $exception->getMessage());
+        self::assertSame($message, $exception->getMessage());
         self::assertSame('rest_post_invalid_id', $exception->data['code'] ?? null);
     }
 
@@ -68,40 +69,44 @@ final class ErrorMapperTest extends TestCase
 
     public function testInvalidParamBadRequestBecomesValidationException(): void
     {
+        $message = $this->faker->sentence();
+        $parameterMessage = $this->faker->sentence();
         $exception = $this->mapper->map(TestResponse::make(400, [], json_encode([
             'code' => 'rest_invalid_param',
-            'message' => 'Invalid parameter(s)',
+            'message' => $message,
             'data' => [
                 'status' => 400,
-                'params' => ['title' => 'Cannot be empty.'],
+                'params' => ['title' => $parameterMessage],
             ],
         ], JSON_THROW_ON_ERROR)));
 
         self::assertInstanceOf(ValidationException::class, $exception);
-        self::assertSame(['title' => 'Cannot be empty.'], $exception->params);
+        self::assertSame(['title' => $parameterMessage], $exception->params);
         self::assertSame(400, $exception->getCode());
         self::assertSame('rest_invalid_param', $exception->data['code'] ?? null);
         self::assertSame(
-            ['status' => 400, 'params' => ['title' => 'Cannot be empty.']],
+            ['status' => 400, 'params' => ['title' => $parameterMessage]],
             $exception->data['data'] ?? null,
         );
     }
 
     public function testValidationExceptionCarriesParams(): void
     {
+        $message = $this->faker->sentence();
+        $parameterMessage = $this->faker->sentence();
         $payload = [
             'code' => 'rest_invalid_param',
-            'message' => 'Invalid parameter(s)',
+            'message' => $message,
             'data' => [
                 'status' => 422,
-                'params' => ['slug' => 'Invalid slug.'],
+                'params' => ['slug' => $parameterMessage],
                 'details' => ['slug' => ['code' => 'rest_invalid_param']],
             ],
         ];
         $exception = $this->mapper->map(TestResponse::make(422, [], json_encode($payload, JSON_THROW_ON_ERROR)));
 
         self::assertInstanceOf(ValidationException::class, $exception);
-        self::assertSame(['slug' => 'Invalid slug.'], $exception->params);
+        self::assertSame(['slug' => $parameterMessage], $exception->params);
         self::assertSame($payload, $exception->data);
     }
 
@@ -109,7 +114,7 @@ final class ErrorMapperTest extends TestCase
     {
         $exception = $this->mapper->map(TestResponse::make(422, [], json_encode([
             'code' => 'rest_invalid_param',
-            'message' => 'Invalid parameter(s)',
+            'message' => $this->faker->sentence(),
             'data' => ['status' => 422],
         ], JSON_THROW_ON_ERROR)));
 

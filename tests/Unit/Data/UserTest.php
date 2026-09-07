@@ -23,20 +23,27 @@ final class UserTest extends TestCase
 {
     public function testPostHydratesFromWordPressPayload(): void
     {
+        $title = $this->faker->sentence(3);
+        $content = sprintf('<p>%s</p>', $this->faker->sentence());
+        $excerpt = sprintf('<p>%s</p>', $this->faker->sentence());
+        $guid = $this->faker->url();
+        $link = $this->faker->url();
+        $slug = $this->faker->slug();
+        $metaValue = (string) $this->faker->randomNumber();
         $payload = json_decode(json_encode([
             'id' => '42',
             'date' => '2026-08-29T10:00:00',
             'date_gmt' => '2026-08-29T10:00:00',
-            'guid' => ['rendered' => 'https://example.com/?p=42'],
+            'guid' => ['rendered' => $guid],
             'modified' => '2026-08-29T11:00:00',
             'modified_gmt' => '2026-08-29T11:00:00',
-            'slug' => 'hello-world',
+            'slug' => $slug,
             'status' => 'publish',
             'type' => 'post',
-            'link' => 'https://example.com/hello-world/',
-            'title' => ['rendered' => 'Hello World', 'raw' => 'Hello World'],
-            'content' => ['rendered' => '<p>Content</p>', 'protected' => false],
-            'excerpt' => ['rendered' => '<p>Excerpt</p>', 'protected' => false],
+            'link' => $link,
+            'title' => ['rendered' => $title, 'raw' => $title],
+            'content' => ['rendered' => $content, 'protected' => false],
+            'excerpt' => ['rendered' => $excerpt, 'protected' => false],
             'author' => '1',
             'featured_media' => '7',
             'comment_status' => 'open',
@@ -44,7 +51,7 @@ final class UserTest extends TestCase
             'sticky' => true,
             'template' => false,
             'format' => 'standard',
-            'meta' => ['_edit_lock' => '123'],
+            'meta' => ['_edit_lock' => $metaValue],
             'categories' => ['3', 4],
             'tags' => [5],
         ], JSON_THROW_ON_ERROR), true);
@@ -53,16 +60,16 @@ final class UserTest extends TestCase
 
         self::assertSame(42, $post->id);
         self::assertSame(7, $post->featured_media);
-        self::assertSame('Hello World', $post->title?->rendered);
-        self::assertSame('Hello World', $post->title->raw);
-        self::assertSame('<p>Content</p>', $post->content?->rendered);
+        self::assertSame($title, $post->title?->rendered);
+        self::assertSame($title, $post->title->raw);
+        self::assertSame($content, $post->content?->rendered);
         self::assertFalse($post->content->protected);
         self::assertInstanceOf(RenderedContent::class, $post->guid);
         self::assertTrue($post->sticky);
         self::assertSame('', $post->template);
         self::assertSame([3, 4], $post->categories);
         self::assertSame([5], $post->tags);
-        self::assertSame(['_edit_lock' => '123'], $post->meta);
+        self::assertSame(['_edit_lock' => $metaValue], $post->meta);
     }
 
     public function testPostDefaultsWhenPayloadIsEmpty(): void
@@ -86,91 +93,113 @@ final class UserTest extends TestCase
 
     public function testPostIgnoresUnknownKeys(): void
     {
-        $post = Post::from(['id' => 1, '_links' => ['self' => [['href' => '/x']]], 'junk' => 'x']);
+        $post = Post::from([
+            'id' => 1,
+            '_links' => ['self' => [['href' => $this->faker->url()]]],
+            'junk' => $this->faker->word(),
+        ]);
 
         self::assertSame(1, $post->id);
     }
 
     public function testPageExtendsPost(): void
     {
-        $page = Page::from(['id' => '8', 'type' => 'page', 'title' => ['rendered' => 'About']]);
+        $title = $this->faker->sentence(2);
+        $page = Page::from(['id' => '8', 'type' => 'page', 'title' => ['rendered' => $title]]);
 
         self::assertSame(8, $page->id);
-        self::assertSame('About', $page->title?->rendered);
+        self::assertSame($title, $page->title?->rendered);
     }
 
     public function testMediaHydrates(): void
     {
+        $title = $this->faker->sentence(2);
+        $caption = sprintf('<p>%s</p>', $this->faker->sentence());
+        $description = sprintf('<p>%s</p>', $this->faker->sentence());
+        $altText = $this->faker->words(2, true);
+        $sourceUrl = $this->faker->url();
         $media = Media::from([
             'id' => '3',
-            'title' => ['rendered' => 'Image'],
-            'caption' => ['rendered' => '<p>Cap</p>'],
-            'description' => ['rendered' => '<p>Desc</p>'],
-            'alt_text' => 'Alt',
+            'title' => ['rendered' => $title],
+            'caption' => ['rendered' => $caption],
+            'description' => ['rendered' => $description],
+            'alt_text' => $altText,
             'media_type' => 'image',
             'mime_type' => 'image/png',
             'media_details' => ['width' => 800],
             'author' => '1',
-            'source_url' => 'https://example.com/wp-content/uploads/2026/08/a.png',
+            'source_url' => $sourceUrl,
         ]);
 
         self::assertSame(3, $media->id);
-        self::assertSame('Image', $media->title?->rendered);
-        self::assertSame('Alt', $media->alt_text);
+        self::assertSame($title, $media->title?->rendered);
+        self::assertSame($altText, $media->alt_text);
         self::assertSame(['width' => 800], $media->media_details);
-        self::assertSame('https://example.com/wp-content/uploads/2026/08/a.png', $media->source_url);
+        self::assertSame($sourceUrl, $media->source_url);
     }
 
     public function testCommentHydrates(): void
     {
+        $authorName = $this->faker->name();
+        $content = sprintf('<p>%s</p>', $this->faker->sentence());
+        $smallAvatar = $this->faker->imageUrl();
+        $largeAvatar = $this->faker->imageUrl();
         $comment = Comment::from([
             'id' => '1',
             'post' => '42',
             'parent' => '0',
             'author' => '2',
-            'author_name' => 'Jane',
+            'author_name' => $authorName,
             'author_url' => '',
-            'content' => ['rendered' => '<p>Hi</p>'],
+            'content' => ['rendered' => $content],
             'status' => 'approve',
             'type' => 'comment',
-            'author_avatar_urls' => ['24' => 'https://example.com/a24.png', '96' => 'https://example.com/a96.png'],
+            'author_avatar_urls' => ['24' => $smallAvatar, '96' => $largeAvatar],
         ]);
 
         self::assertSame(1, $comment->id);
         self::assertSame(42, $comment->post);
-        self::assertSame('Jane', $comment->author_name);
-        self::assertSame('<p>Hi</p>', $comment->content?->rendered);
-        self::assertSame('https://example.com/a96.png', $comment->author_avatar_urls['96'] ?? null);
+        self::assertSame($authorName, $comment->author_name);
+        self::assertSame($content, $comment->content?->rendered);
+        self::assertSame($largeAvatar, $comment->author_avatar_urls['96'] ?? null);
     }
 
     public function testUserHydrates(): void
     {
+        $name = $this->faker->name();
+        $slug = $this->faker->slug();
+        $link = $this->faker->url();
+        $avatarUrl = $this->faker->imageUrl();
+        $username = $this->faker->userName();
         $user = User::from([
             'id' => '9',
-            'name' => 'Admin',
-            'slug' => 'admin',
-            'link' => 'https://example.com/author/admin/',
-            'avatar_urls' => ['96' => 'https://example.com/avatar.png'],
-            'meta' => ['nickname' => 'Admin'],
-            'username' => 'admin_login',
+            'name' => $name,
+            'slug' => $slug,
+            'link' => $link,
+            'avatar_urls' => ['96' => $avatarUrl],
+            'meta' => ['nickname' => $name],
+            'username' => $username,
         ]);
 
         self::assertSame(9, $user->id);
-        self::assertSame('Admin', $user->name);
-        self::assertSame('admin_login', $user->username);
-        self::assertSame(['96' => 'https://example.com/avatar.png'], $user->avatar_urls);
+        self::assertSame($name, $user->name);
+        self::assertSame($username, $user->username);
+        self::assertSame(['96' => $avatarUrl], $user->avatar_urls);
     }
 
     public function testUserHydratesEditContextFields(): void
     {
+        $email = $this->faker->email();
+        $firstName = $this->faker->firstName();
+        $lastName = $this->faker->lastName();
         $user = User::from([
             'id' => 2,
-            'name' => 'Editor',
-            'slug' => 'editor',
-            'email' => 'editor@example.test',
-            'first_name' => 'Ed',
-            'last_name' => 'Itor',
-            'nickname' => 'ed',
+            'name' => $this->faker->name(),
+            'slug' => $this->faker->slug(),
+            'email' => $email,
+            'first_name' => $firstName,
+            'last_name' => $lastName,
+            'nickname' => $this->faker->userName(),
             'locale' => 'en_US',
             'registered_date' => '2026-01-01T00:00:00',
             'roles' => ['editor'],
@@ -178,9 +207,9 @@ final class UserTest extends TestCase
             'extra_capabilities' => ['administrator' => false],
         ]);
 
-        self::assertSame('editor@example.test', $user->email);
-        self::assertSame('Ed', $user->first_name);
-        self::assertSame('Itor', $user->last_name);
+        self::assertSame($email, $user->email);
+        self::assertSame($firstName, $user->first_name);
+        self::assertSame($lastName, $user->last_name);
         self::assertSame(['editor'], $user->roles);
         self::assertSame(['edit_posts' => true], $user->capabilities);
         self::assertSame(['administrator' => false], $user->extra_capabilities);
@@ -188,39 +217,43 @@ final class UserTest extends TestCase
 
     public function testUserWithoutUsername(): void
     {
-        $user = User::from(['id' => 1, 'slug' => 'admin']);
+        $user = User::from(['id' => 1, 'slug' => $this->faker->slug()]);
 
         self::assertNull($user->username);
     }
 
     public function testTermHydrates(): void
     {
+        $description = $this->faker->sentence();
+        $name = $this->faker->word();
+        $slug = $this->faker->slug();
         $term = Term::from([
             'id' => '5',
             'count' => '3',
-            'description' => 'Desc',
-            'name' => 'News',
-            'slug' => 'news',
+            'description' => $description,
+            'name' => $name,
+            'slug' => $slug,
             'taxonomy' => 'category',
             'parent' => '0',
         ]);
 
         self::assertSame(5, $term->id);
         self::assertSame(3, $term->count);
-        self::assertSame('News', $term->name);
+        self::assertSame($name, $term->name);
         self::assertSame('category', $term->taxonomy);
     }
 
     public function testTaxonomyHydrates(): void
     {
+        $name = $this->faker->word();
         $taxonomy = Taxonomy::from([
             'slug' => 'category',
-            'name' => 'Categories',
+            'name' => $name,
             'types' => ['post', 'page'],
             'rest_base' => 'categories',
             'hierarchical' => true,
             'rest_namespace' => 'wp/v2',
-            'labels' => ['name' => 'Categories'],
+            'labels' => ['name' => $name],
         ]);
 
         self::assertSame('category', $taxonomy->slug);
@@ -230,9 +263,10 @@ final class UserTest extends TestCase
 
     public function testPostTypeHydrates(): void
     {
+        $name = $this->faker->word();
         $postType = PostType::from([
             'slug' => 'post',
-            'name' => 'Posts',
+            'name' => $name,
             'hierarchical' => false,
             'viewable' => true,
             'supports' => ['title', 'editor'],
@@ -246,15 +280,16 @@ final class UserTest extends TestCase
 
     public function testStatusHydrates(): void
     {
+        $name = $this->faker->word();
         $status = Status::from([
-            'name' => 'Publish',
+            'name' => $name,
             'slug' => 'publish',
             'public' => true,
             'queryable' => true,
             'show_in_list' => true,
         ]);
 
-        self::assertSame('Publish', $status->name);
+        self::assertSame($name, $status->name);
         self::assertSame('publish', $status->slug);
         self::assertTrue($status->public);
         self::assertFalse($status->protected);
@@ -262,74 +297,82 @@ final class UserTest extends TestCase
 
     public function testSearchResultHydrates(): void
     {
+        $title = $this->faker->sentence(2);
         $result = SearchResult::from([
             'id' => '12',
-            'title' => 'Found',
-            'url' => 'https://example.com/found/',
+            'title' => $title,
+            'url' => $this->faker->url(),
             'type' => 'post',
             'subtype' => 'post',
         ]);
 
         self::assertSame(12, $result->id);
-        self::assertSame('Found', $result->title);
+        self::assertSame($title, $result->title);
         self::assertSame('post', $result->type);
     }
 
     public function testSettingsWrapValuesAndLookUpKeys(): void
     {
-        $settings = Settings::from(['title' => 'My Site', 'users_can_register' => 0]);
+        $title = $this->faker->sentence(2);
+        $fallback = $this->faker->word();
+        $settings = Settings::from(['title' => $title, 'users_can_register' => 0]);
 
-        self::assertSame('My Site', $settings->get('title'));
+        self::assertSame($title, $settings->get('title'));
         self::assertSame(0, $settings->get('users_can_register'));
-        self::assertSame('fallback', $settings->get('missing', 'fallback'));
+        self::assertSame($fallback, $settings->get('missing', $fallback));
         self::assertNull($settings->get('missing'));
     }
 
     public function testSettingsPreservesArrayValuedSettingNamedValues(): void
     {
-        $settings = Settings::from(['values' => ['title' => 'My Site']]);
+        $title = $this->faker->sentence(2);
+        $settings = Settings::from(['values' => ['title' => $title]]);
 
-        self::assertSame(['title' => 'My Site'], $settings->get('values'));
-        self::assertSame(['values' => ['title' => 'My Site']], $settings->toArray());
+        self::assertSame(['title' => $title], $settings->get('values'));
+        self::assertSame(['values' => ['title' => $title]], $settings->toArray());
     }
 
     public function testApplicationPasswordHydrates(): void
     {
+        $uuid = $this->faker->uuid();
+        $name = $this->faker->word();
         $password = ApplicationPassword::from([
-            'uuid' => 'abc-123',
+            'uuid' => $uuid,
             'app_id' => 5,
-            'name' => 'Worker',
+            'name' => $name,
             'created' => '2026-08-29T10:00:00',
             'last_used' => '2026-08-29T11:00:00',
             'last_ip' => '127.0.0.1',
         ]);
 
-        self::assertSame('abc-123', $password->uuid);
-        self::assertSame('Worker', $password->name);
+        self::assertSame($uuid, $password->uuid);
+        self::assertSame($name, $password->name);
         self::assertNull($password->password);
     }
 
     public function testApplicationPasswordCarriesGeneratedSecretOnCreate(): void
     {
+        $generatedPassword = $this->faker->password();
         $password = ApplicationPassword::from([
-            'uuid' => 'abc',
-            'name' => 'Worker',
-            'password' => 'abcd efgh ijkl',
+            'uuid' => $this->faker->uuid(),
+            'name' => $this->faker->word(),
+            'password' => $generatedPassword,
         ]);
 
-        self::assertSame('abcd efgh ijkl', $password->password);
+        self::assertSame($generatedPassword, $password->password);
     }
 
     public function testDtoSerializationRoundTrip(): void
     {
-        $post = Post::from(['id' => 1, 'title' => ['rendered' => 'T'], 'sticky' => true]);
+        $title = $this->faker->sentence(2);
+        $post = Post::from(['id' => 1, 'title' => ['rendered' => $title], 'sticky' => true]);
 
         $array = $post->toArray();
 
         self::assertSame(1, $array['id']);
-        $title = $array['title'] ?? [];
-        /** @var array<string, mixed> $title */
-        self::assertSame('T', $title['rendered'] ?? null);
+        $serializedTitle = $array['title'] ?? [];
+        /** @var array<string, mixed> $serializedTitle */
+        self::assertSame($title, $serializedTitle['rendered'] ?? null);
         self::assertTrue($array['sticky']);
     }
 }

@@ -31,6 +31,8 @@ final class RawEndpointServiceTest extends TestCase
             'widgets' => ['widgets', 'wp/v2/widgets'],
         ] as $label => [$accessor, $path]) {
             $service = $this->wordPress->{$accessor}();
+            $name = $this->faker->word();
+            $updatedName = $this->faker->word();
 
             $list = new TestResponseSequence();
             $list->push(TestResponse::json(['items' => [1]]));
@@ -46,12 +48,16 @@ final class RawEndpointServiceTest extends TestCase
             $create = new TestResponseSequence();
             $create->push(TestResponse::json(['id' => 2], 201));
             $this->httpFakes()->respond('POST', '*' . $path . '*', $create);
-            self::assertSame(['id' => 2], $service->create(['name' => 'x']), $label . ' create');
+            self::assertSame(['id' => 2], $service->create(['name' => $name]), $label . ' create');
 
             $update = new TestResponseSequence();
-            $update->push(TestResponse::json(['id' => 2, 'name' => 'y']));
+            $update->push(TestResponse::json(['id' => 2, 'name' => $updatedName]));
             $this->httpFakes()->respond('POST', '*' . $path . '/2*', $update);
-            self::assertSame(['id' => 2, 'name' => 'y'], $service->update(2, ['name' => 'y']), $label . ' update');
+            self::assertSame(
+                ['id' => 2, 'name' => $updatedName],
+                $service->update(2, ['name' => $updatedName]),
+                $label . ' update',
+            );
 
             $delete = new TestResponseSequence();
             $delete->push(TestResponse::json(['deleted' => true]));
@@ -146,25 +152,27 @@ final class RawEndpointServiceTest extends TestCase
 
     public function testBlockRendererSendsEditContext(): void
     {
+        $renderedHtml = sprintf('<div>%s</div>', $this->faker->sentence());
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['rendered' => '<div>Latest</div>']));
+        $sequence->push(TestResponse::json(['rendered' => $renderedHtml]));
         $this->httpFakes()->respond('GET', '*wp/v2/block-renderer/core/latest-posts*', $sequence);
 
         $rendered = $this->wordPress->blockRenderer()->render('core/latest-posts', ['postsToShow' => 3], 12);
 
-        self::assertSame(['rendered' => '<div>Latest</div>'], $rendered);
+        self::assertSame(['rendered' => $renderedHtml], $rendered);
         $request = $this->lastRequest();
         $this->assertQuery($request, ['context' => 'edit', 'post_id' => 12]);
     }
 
     public function testBlockDirectorySearch(): void
     {
+        $term = $this->faker->word();
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::json(['results' => []]));
         $this->httpFakes()->respond('GET', '*wp/v2/block-directory/search*', $sequence);
 
-        self::assertSame(['results' => []], $this->wordPress->blockDirectory()->search(['term' => 'gallery']));
-        $this->assertQuery($this->lastRequest(), ['term' => 'gallery']);
+        self::assertSame(['results' => []], $this->wordPress->blockDirectory()->search(['term' => $term]));
+        $this->assertQuery($this->lastRequest(), ['term' => $term]);
     }
 
     public function testMenuLocations(): void
@@ -200,15 +208,20 @@ final class RawEndpointServiceTest extends TestCase
 
     public function testWidgetTypesAndSidebars(): void
     {
+        $encoded = $this->faker->word();
+        $text = $this->faker->sentence();
         $list = new TestResponseSequence();
         $list->push(TestResponse::json(['types' => []]));
         $this->httpFakes()->respond('GET', '*wp/v2/widget-types*', $list);
         self::assertSame(['types' => []], $this->wordPress->widgetTypes()->list());
 
         $encode = new TestResponseSequence();
-        $encode->push(TestResponse::json(['encoded' => 'x']));
+        $encode->push(TestResponse::json(['encoded' => $encoded]));
         $this->httpFakes()->respond('POST', '*wp/v2/widget-types/paragraph/encode*', $encode);
-        self::assertSame(['encoded' => 'x'], $this->wordPress->widgetTypes()->encode('paragraph', ['text' => 'Hi']));
+        self::assertSame(
+            ['encoded' => $encoded],
+            $this->wordPress->widgetTypes()->encode('paragraph', ['text' => $text]),
+        );
 
         $sidebars = new TestResponseSequence();
         $sidebars->push(TestResponse::json(['sidebars' => []]));

@@ -109,28 +109,30 @@ final class PostsServiceTest extends TestCase
 
     public function testPagesServiceRoutesToPagesEndpoint(): void
     {
+        $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
-            ['id' => 3, 'type' => 'page', 'title' => ['rendered' => 'About']],
+            ['id' => 3, 'type' => 'page', 'title' => ['rendered' => $title]],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('GET', '*wp/v2/pages*', $sequence);
 
         $pages = $this->wordPress->pages()->list();
 
         self::assertInstanceOf(Page::class, $pages->all()[0]);
-        self::assertSame('About', $pages->all()[0]->title?->rendered);
+        self::assertSame($title, $pages->all()[0]->title?->rendered);
         self::assertSame('/wp-json/wp/v2/pages', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testCommentsServiceRoutesToCommentsEndpoint(): void
     {
+        $authorName = $this->faker->name();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 1, 'author_name' => 'Jane']));
+        $sequence->push(TestResponse::json(['id' => 1, 'author_name' => $authorName]));
         $this->httpFakes()->respond('GET', '*wp/v2/comments/1*', $sequence);
 
         $comment = $this->wordPress->comments()->get(1);
 
-        self::assertSame('Jane', $comment->author_name);
+        self::assertSame($authorName, $comment->author_name);
         self::assertSame('/wp-json/wp/v2/comments/1', $this->lastRequest()->getUri()->getPath());
     }
 

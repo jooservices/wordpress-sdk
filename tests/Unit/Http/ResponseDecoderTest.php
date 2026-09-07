@@ -25,19 +25,20 @@ final class ResponseDecoderTest extends TestCase
 
     public function testDecodeItemHydratesDtoFromJsonBody(): void
     {
+        $title = $this->faker->sentence(2);
         $response = TestResponse::make(200, [], json_encode([
             'id' => '42',
-            'title' => ['rendered' => 'Hello', 'raw' => 'Hello'],
+            'title' => ['rendered' => $title, 'raw' => $title],
             'template' => false,
             'categories' => ['1', 2],
-            '_links' => ['self' => [['href' => '/x']]],
+            '_links' => ['self' => [['href' => $this->faker->url()]]],
         ], JSON_THROW_ON_ERROR));
 
         $post = $this->decoder->decodeItem($response, Post::class);
 
         self::assertInstanceOf(Post::class, $post);
         self::assertSame(42, $post->id);
-        self::assertSame('Hello', $post->title?->rendered);
+        self::assertSame($title, $post->title?->rendered);
         self::assertSame('', $post->template);
         self::assertSame([1, 2], $post->categories);
     }
@@ -97,12 +98,14 @@ final class ResponseDecoderTest extends TestCase
 
     public function testDecodeListUsesPaginationHeaders(): void
     {
+        $firstTitle = $this->faker->sentence(2);
+        $secondTitle = $this->faker->sentence(2);
         $response = TestResponse::make(200, [
             'X-WP-Total' => '2',
             'X-WP-TotalPages' => '1',
         ], json_encode([
-            ['id' => 1, 'title' => ['rendered' => 'A']],
-            ['id' => 2, 'title' => ['rendered' => 'B']],
+            ['id' => 1, 'title' => ['rendered' => $firstTitle]],
+            ['id' => 2, 'title' => ['rendered' => $secondTitle]],
         ], JSON_THROW_ON_ERROR));
 
         $collection = $this->decoder->decodeList($response, Post::class);
@@ -111,13 +114,13 @@ final class ResponseDecoderTest extends TestCase
         self::assertSame(2, $collection->total);
         self::assertSame(1, $collection->totalPages);
         self::assertInstanceOf(Post::class, $collection->all()[0]);
-        self::assertSame('A', $collection->all()[0]->title?->rendered);
+        self::assertSame($firstTitle, $collection->all()[0]->title?->rendered);
     }
 
     public function testDecodeListWithoutHeadersFallsBackToItemCount(): void
     {
         $response = TestResponse::make(200, [], json_encode([
-            ['id' => 1, 'title' => ['rendered' => 'A']],
+            ['id' => 1, 'title' => ['rendered' => $this->faker->sentence(2)]],
         ], JSON_THROW_ON_ERROR));
 
         $collection = $this->decoder->decodeList($response, Post::class);
@@ -128,23 +131,25 @@ final class ResponseDecoderTest extends TestCase
 
     public function testDecodeListHandlesAssocPayload(): void
     {
+        $publishName = $this->faker->word();
+        $draftName = $this->faker->word();
         $response = TestResponse::make(200, [], json_encode([
-            'publish' => ['name' => 'Publish', 'public' => true],
-            'draft' => ['name' => 'Draft', 'public' => false],
+            'publish' => ['name' => $publishName, 'public' => true],
+            'draft' => ['name' => $draftName, 'public' => false],
         ], JSON_THROW_ON_ERROR));
 
         $collection = $this->decoder->decodeList($response, Status::class);
 
         self::assertCount(2, $collection);
-        self::assertSame('Publish', $collection->all()[0]->name);
+        self::assertSame($publishName, $collection->all()[0]->name);
         self::assertTrue($collection->all()[0]->public);
     }
 
     public function testDecodeListSkipsNonArrayMapValues(): void
     {
         $response = TestResponse::make(200, [], json_encode([
-            'publish' => ['name' => 'Publish'],
-            'broken' => 'not-an-object',
+            'publish' => ['name' => $this->faker->word()],
+            'broken' => $this->faker->word(),
         ], JSON_THROW_ON_ERROR));
 
         $collection = $this->decoder->decodeList($response, Status::class);
@@ -155,8 +160,8 @@ final class ResponseDecoderTest extends TestCase
     public function testDecodeArrayReturnsList(): void
     {
         $response = TestResponse::make(200, [], json_encode([
-            ['id' => 1, 'title' => ['rendered' => 'A']],
-            ['id' => 2, 'title' => ['rendered' => 'B']],
+            ['id' => 1, 'title' => ['rendered' => $this->faker->sentence(2)]],
+            ['id' => 2, 'title' => ['rendered' => $this->faker->sentence(2)]],
         ], JSON_THROW_ON_ERROR));
 
         $items = $this->decoder->decodeArray($response, Post::class);
@@ -168,7 +173,7 @@ final class ResponseDecoderTest extends TestCase
     public function testDecodeArrayRejectsAssocPayload(): void
     {
         $response = TestResponse::make(200, [], json_encode([
-            'publish' => ['name' => 'Publish'],
+            'publish' => ['name' => $this->faker->word()],
         ], JSON_THROW_ON_ERROR));
 
         $this->expectException(ServerException::class);
@@ -178,11 +183,12 @@ final class ResponseDecoderTest extends TestCase
 
     public function testDeserializeFromArray(): void
     {
-        $post = $this->decoder->deserialize(['id' => 7, 'slug' => 'hello'], Post::class);
+        $slug = $this->faker->slug();
+        $post = $this->decoder->deserialize(['id' => 7, 'slug' => $slug], Post::class);
 
         self::assertInstanceOf(Post::class, $post);
         self::assertSame(7, $post->id);
-        self::assertSame('hello', $post->slug);
+        self::assertSame($slug, $post->slug);
     }
 
     public function testDeserializeEmptyArrayUsesDefaults(): void

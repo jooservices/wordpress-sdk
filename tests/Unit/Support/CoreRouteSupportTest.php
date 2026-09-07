@@ -86,6 +86,7 @@ final class CoreRouteSupportTest extends TestCase
 
     public function testAutosavesCoverListGetCreateAndValidation(): void
     {
+        $title = $this->faker->sentence(2);
         $resource = $this->wordPress->autosaves()->resource('posts', 7);
 
         $this->respond('GET', 'wp/v2/posts/7/autosaves', [['id' => 1]]);
@@ -96,7 +97,7 @@ final class CoreRouteSupportTest extends TestCase
         self::assertSame(['id' => 1], $resource->get(1));
 
         $this->respond('POST', 'wp/v2/posts/7/autosaves', ['id' => 2]);
-        self::assertSame(['id' => 2], $resource->create(['title' => 'Draft']));
+        self::assertSame(['id' => 2], $resource->create(['title' => $title]));
 
         $this->expectException(InvalidArgumentException::class);
         $this->wordPress->autosaves()->resource('unknown', 1);
@@ -104,12 +105,15 @@ final class CoreRouteSupportTest extends TestCase
 
     public function testPatternsCoverRegistryDirectoryAndTermCrud(): void
     {
+        $search = $this->faker->word();
+        $name = $this->faker->word();
+        $updatedName = $this->faker->word();
         $patterns = $this->wordPress->patterns();
 
         foreach ([
             ['patterns', 'GET', 'wp/v2/block-patterns/patterns', ['category' => 1]],
             ['categories', 'GET', 'wp/v2/block-patterns/categories', ['context' => 'view']],
-            ['directory', 'GET', 'wp/v2/pattern-directory/patterns', ['search' => 'hero']],
+            ['directory', 'GET', 'wp/v2/pattern-directory/patterns', ['search' => $search]],
             ['listTerms', 'GET', 'wp/v2/wp_pattern_category', ['per_page' => 10]],
         ] as [$method, $httpMethod, $path, $query]) {
             $this->respond($httpMethod, $path, ['ok' => true]);
@@ -119,24 +123,26 @@ final class CoreRouteSupportTest extends TestCase
         $this->respond('GET', 'wp/v2/wp_pattern_category/2', ['id' => 2]);
         self::assertSame(['id' => 2], $patterns->getTerm(2));
         $this->respond('POST', 'wp/v2/wp_pattern_category', ['id' => 3]);
-        self::assertSame(['id' => 3], $patterns->createTerm(['name' => 'Hero']));
+        self::assertSame(['id' => 3], $patterns->createTerm(['name' => $name]));
         $this->respond('POST', 'wp/v2/wp_pattern_category/3', ['id' => 3]);
-        self::assertSame(['id' => 3], $patterns->updateTerm(3, ['name' => 'Heroes']));
+        self::assertSame(['id' => 3], $patterns->updateTerm(3, ['name' => $updatedName]));
         $this->respond('DELETE', 'wp/v2/wp_pattern_category/3', ['deleted' => true]);
         self::assertSame(['deleted' => true], $patterns->deleteTerm(3, false));
     }
 
     public function testFontsCoverFamiliesFacesAndCollections(): void
     {
+        $familyName = $this->faker->word();
+        $updatedFamilyName = $this->faker->word();
         $fonts = $this->wordPress->fonts();
         $this->respond('GET', 'wp/v2/font-families', ['items' => []]);
         self::assertSame(['items' => []], $fonts->families(['per_page' => 5]));
         $this->respond('GET', 'wp/v2/font-families/1', ['id' => 1]);
         self::assertSame(['id' => 1], $fonts->family(1));
         $this->respond('POST', 'wp/v2/font-families', ['id' => 2]);
-        self::assertSame(['id' => 2], $fonts->createFamily(['name' => 'Inter']));
+        self::assertSame(['id' => 2], $fonts->createFamily(['name' => $familyName]));
         $this->respond('POST', 'wp/v2/font-families/2', ['id' => 2]);
-        self::assertSame(['id' => 2], $fonts->updateFamily(2, ['name' => 'Inter UI']));
+        self::assertSame(['id' => 2], $fonts->updateFamily(2, ['name' => $updatedFamilyName]));
         $this->respond('DELETE', 'wp/v2/font-families/2', ['deleted' => true]);
         self::assertSame(['deleted' => true], $fonts->deleteFamily(2, false));
 
@@ -149,11 +155,11 @@ final class CoreRouteSupportTest extends TestCase
 
         $file = tempnam(sys_get_temp_dir(), 'sdk-font');
         self::assertNotFalse($file);
-        file_put_contents($file, 'font-bytes');
+        file_put_contents($file, $this->faker->text());
         try {
             $this->respond('POST', 'wp/v2/font-families/1/font-faces', ['id' => 6]);
             self::assertSame(['id' => 6], $fonts->uploadFace(1, $file, [
-                'fontFamily' => 'Inter',
+                'fontFamily' => $familyName,
                 'fontWeight' => '700',
                 'fontStyle' => 'normal',
             ]));
@@ -177,9 +183,10 @@ final class CoreRouteSupportTest extends TestCase
 
     public function testEditorAbilitiesIconsAndUtilities(): void
     {
+        $url = $this->faker->url();
         $editor = $this->wordPress->editor();
         foreach ([
-            ['urlDetails', 'wp-block-editor/v1/url-details', ['https://example.test/post']],
+            ['urlDetails', 'wp-block-editor/v1/url-details', [$url]],
             ['export', 'wp-block-editor/v1/export', []],
             ['navigationFallback', 'wp-block-editor/v1/navigation-fallback', []],
             ['viewConfig', 'wp/v2/view-config', []],
@@ -213,22 +220,26 @@ final class CoreRouteSupportTest extends TestCase
         self::assertSame(['slug' => 'core'], $icons->collection('core'));
 
         $utility = $this->wordPress->utility();
+        $title = $this->faker->sentence(2);
+        $html = sprintf('<p>%s</p>', $this->faker->sentence());
         $this->respond('POST', 'batch/v1', ['responses' => []]);
         self::assertSame(['responses' => []], $utility->batch([
-            ['method' => 'POST', 'path' => '/wp/v2/posts', 'body' => ['title' => 'Draft']],
+            ['method' => 'POST', 'path' => '/wp/v2/posts', 'body' => ['title' => $title]],
         ], 'require-all-validate'));
-        $this->respond('GET', 'oembed/1.0/embed', ['html' => '<p>x</p>']);
-        self::assertSame(['html' => '<p>x</p>'], $utility->embed('https://example.test/post', ['maxwidth' => 600]));
-        $this->respond('GET', 'oembed/1.0/proxy', ['html' => '<p>x</p>']);
-        self::assertSame(['html' => '<p>x</p>'], $utility->proxy('https://example.test/post'));
+        $this->respond('GET', 'oembed/1.0/embed', ['html' => $html]);
+        self::assertSame(['html' => $html], $utility->embed($url, ['maxwidth' => 600]));
+        $this->respond('GET', 'oembed/1.0/proxy', ['html' => $html]);
+        self::assertSame(['html' => $html], $utility->proxy($url));
     }
 
     public function testExpandedExistingCoreServices(): void
     {
+        $uuid = $this->faker->uuid();
+        $name = $this->faker->word();
         $this->respond('GET', 'wp/v2/users/me/application-passwords/introspect', [
-            'uuid' => 'password-uuid', 'name' => 'SDK',
+            'uuid' => $uuid, 'name' => $name,
         ]);
-        self::assertSame('password-uuid', $this->wordPress->applicationPasswords()->introspect()->uuid);
+        self::assertSame($uuid, $this->wordPress->applicationPasswords()->introspect()->uuid);
 
         $this->respond('POST', 'wp/v2/media/4/post-process', ['id' => 4]);
         self::assertSame(['id' => 4], $this->wordPress->media()->postProcess(4, 'create-image-subsizes'));
@@ -239,8 +250,10 @@ final class CoreRouteSupportTest extends TestCase
         self::assertSame(['id' => 'theme//index'], $this->wordPress->templates()->lookup(['slug' => 'index']));
         $this->respond('GET', 'wp/v2/global-styles/themes/theme/variations', ['items' => []]);
         self::assertSame(['items' => []], $this->wordPress->globalStyles()->variations('theme'));
-        $this->respond('POST', 'wp/v2/widget-types/text/render', ['preview' => '<p>x</p>']);
-        self::assertSame(['preview' => '<p>x</p>'], $this->wordPress->widgetTypes()->render('text', ['text' => 'x']));
+        $text = $this->faker->sentence();
+        $preview = sprintf('<p>%s</p>', $text);
+        $this->respond('POST', 'wp/v2/widget-types/text/render', ['preview' => $preview]);
+        self::assertSame(['preview' => $preview], $this->wordPress->widgetTypes()->render('text', ['text' => $text]));
 
         foreach ([
             'dotOrgCommunication' => 'tests/dotorg-communication',

@@ -5,13 +5,13 @@
 [![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=jooservices_wordpress-sdk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jooservices_wordpress-sdk)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/wordpress-sdk/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/wordpress-sdk)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
-[![Release](https://img.shields.io/badge/version-4.0.0-blue.svg)](CHANGELOG.md)
+[![Release](https://img.shields.io/badge/version-4.1.0-blue.svg)](CHANGELOG.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 PHP 8.5 SDK with typed DTOs for stable WordPress REST resources and documented
 raw-array access for dynamic admin/editor schemas.
 
-Package: `jooservices/wordpress-sdk` · v4.0.0 (ground-up rebuild)
+Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 
 > [!WARNING]
 > **`v4.0.0` is a complete rebuild and is not backward compatible with archived `v1.x`.** See [About v4.0.0](#about-v400) and [UPGRADE-4.0.md](UPGRADE-4.0.md).
@@ -20,7 +20,7 @@ Package: `jooservices/wordpress-sdk` · v4.0.0 (ground-up rebuild)
 
 | | |
 | --- | --- |
-| Status | **`v4.0.0` — current release** |
+| Status | **`v4.1.0` — current release** |
 | First public line | `v4.0.0` |
 | Runtime | PHP `^8.5`, `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
 

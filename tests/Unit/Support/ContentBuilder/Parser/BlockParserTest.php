@@ -9,17 +9,21 @@ use JOOservices\WordPress\Sdk\Support\ContentBuilder\BlockRegistry;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Button;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Column;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Columns;
+use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Code;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Group;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Heading;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Image;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Paragraph;
+use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\PageBreak;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Quote;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\ReadMore;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\ReadMoreButton;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Separator;
+use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Core\Shortcode;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Blocks\Raw\HtmlBlock;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\GenericBlock;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\Parser\BlockParser;
+use JOOservices\WordPress\Sdk\Tests\Fixtures\CustomBlock;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class BlockParserTest extends TestCase
@@ -76,6 +80,26 @@ final class BlockParserTest extends TestCase
             "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $blocks[0]->render(),
         );
+    }
+
+    public function testRegisteredOverrideTakesPrecedenceOverCoreParser(): void
+    {
+        $content = $this->faker->sentence();
+        $attributes = ['anchor' => $this->faker->slug()];
+        $this->registry->register('core/paragraph', CustomBlock::class);
+
+        $blocks = $this->parser->parse(
+            sprintf(
+                "<!-- wp:paragraph %s -->\n<p>%s</p>\n<!-- /wp:paragraph -->",
+                json_encode($attributes, JSON_THROW_ON_ERROR),
+                $content,
+            ),
+            $this->registry,
+        );
+
+        self::assertInstanceOf(CustomBlock::class, $blocks[0]);
+        self::assertSame("\n<p>{$content}</p>\n", $blocks[0]->content);
+        self::assertSame($attributes, $blocks[0]->attributes);
     }
 
     public function testParsesHeadingWithLevel(): void
@@ -176,6 +200,24 @@ final class BlockParserTest extends TestCase
 
         self::assertInstanceOf(Separator::class, $blocks[0]);
         self::assertInstanceOf(ReadMoreButton::class, $blocks[1]);
+    }
+
+    public function testParsesCodeShortcodeHtmlAndPageBreakLeaves(): void
+    {
+        $code = $this->faker->word();
+        $shortcode = sprintf('[%s]', $this->faker->slug());
+        $html = sprintf('<div>%s</div>', $this->faker->sentence());
+        $source = "<!-- wp:code -->\n<pre><code>{$code}</code></pre>\n<!-- /wp:code -->\n"
+            . "<!-- wp:shortcode -->\n{$shortcode}\n<!-- /wp:shortcode -->\n"
+            . "<!-- wp:html -->\n{$html}\n<!-- /wp:html -->\n"
+            . '<!-- wp:nextpage /-->';
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertInstanceOf(Code::class, $blocks[0]);
+        self::assertInstanceOf(Shortcode::class, $blocks[1]);
+        self::assertInstanceOf(HtmlBlock::class, $blocks[2]);
+        self::assertInstanceOf(PageBreak::class, $blocks[3]);
     }
 
     public function testParsesContainersWithChildren(): void

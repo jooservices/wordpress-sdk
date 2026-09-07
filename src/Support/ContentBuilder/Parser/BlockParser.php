@@ -213,7 +213,7 @@ final class BlockParser
             return $this->createContainer($className, $attributes, $inner, $registry);
         }
 
-        return $this->createLeaf($name, $className, $attributes, $inner);
+        return $this->createLeaf($className, $attributes, $inner);
     }
 
     /**
@@ -270,21 +270,21 @@ final class BlockParser
      * @param class-string<BlockInterface> $className
      * @param array<string, mixed> $attributes
      */
-    private function createLeaf(string $name, string $className, array $attributes, string $inner): BlockInterface
+    private function createLeaf(string $className, array $attributes, string $inner): BlockInterface
     {
-        return match ($name) {
-            'paragraph' => new Paragraph($this->unwrapTag($inner, 'p'), $attributes),
-            'heading' => $this->createHeading($attributes, $inner),
-            'image' => $this->createImage($attributes, $inner),
-            'quote' => $this->createQuote($attributes, $inner),
-            'code' => new Code($this->unwrapCode($inner), $attributes),
-            'shortcode' => new Shortcode(trim($inner), $attributes),
-            'html' => new HtmlBlock($inner, $attributes),
-            'more' => $this->createReadMore($attributes, $inner),
-            'read-more' => new ReadMoreButton($this->anchorInnerHtml($inner), $attributes),
-            'nextpage' => new PageBreak($attributes),
-            'separator' => new Separator($attributes),
-            'button' => $this->createButton($attributes, $inner),
+        return match ($className) {
+            Paragraph::class => new Paragraph($this->unwrapTag($inner, 'p'), $attributes),
+            Heading::class => $this->createHeading($attributes, $inner),
+            Image::class => $this->createImage($attributes, $inner),
+            Quote::class => $this->createQuote($attributes, $inner),
+            Code::class => new Code($this->unwrapCode($inner), $attributes),
+            Shortcode::class => new Shortcode(trim($inner), $attributes),
+            HtmlBlock::class => new HtmlBlock($inner, $attributes),
+            ReadMore::class => $this->createReadMore($attributes, $inner),
+            ReadMoreButton::class => new ReadMoreButton($this->anchorInnerHtml($inner), $attributes),
+            PageBreak::class => new PageBreak($attributes),
+            Separator::class => new Separator($attributes),
+            Button::class => $this->createButton($attributes, $inner),
             default => new $className($inner, $attributes),
         };
     }

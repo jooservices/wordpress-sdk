@@ -122,7 +122,7 @@ final class PostsServiceTest extends TestCase
         $this->assertJsonBody($this->lastRequest(), [
             'title' => 'Built',
             'slug' => 'built',
-            'status' => 'publish',
+            'status' => 'draft',
         ]);
     }
 

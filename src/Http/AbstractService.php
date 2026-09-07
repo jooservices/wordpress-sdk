@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace JOOservices\WordPress\Sdk\Http;
 
 use Generator;
+use JsonException;
 use JOOservices\Client\Request\MultipartPart;
 use JOOservices\Client\Request\RequestBuilder;
 use JOOservices\Dto\Core\Dto;
 use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
 use JOOservices\WordPress\Sdk\Contracts\ResponseDecoderInterface;
 use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
+use JOOservices\WordPress\Sdk\Exceptions\ServerException;
 use JOOservices\WordPress\Sdk\Pagination\PaginatedCollection;
 use Psr\Http\Client\ClientInterface;
 use Psr\Http\Message\RequestInterface;
@@ -124,11 +126,8 @@ abstract class AbstractService
      */
     protected function deleteAndDecode(string $uri, string $dtoClass, array $options = []): object
     {
-        $response = $this->request('DELETE', $uri, $options);
-
-        /** @var array<string, mixed>|null $data */
-        $data = json_decode((string) $response->getBody(), true);
-        if (! is_array($data)) {
+        $data = $this->decodeArrayResponse($this->request('DELETE', $uri, $options));
+        if ($data === []) {
             return $this->decoder->deserialize([], $dtoClass);
         }
 
@@ -149,12 +148,7 @@ abstract class AbstractService
      */
     protected function requestArray(string $method, string $uri, array $options = []): array
     {
-        $response = $this->request($method, $uri, $options);
-
-        /** @var array<string, mixed>|null $data */
-        $data = json_decode((string) $response->getBody(), true);
-
-        return is_array($data) ? $data : [];
+        return $this->decodeArrayResponse($this->request($method, $uri, $options));
     }
 
     /**
@@ -274,5 +268,32 @@ abstract class AbstractService
         }
 
         return $builder->build()->toPsr();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function decodeArrayResponse(ResponseInterface $response): array
+    {
+        $body = (string) $response->getBody();
+        if (trim($body) === '') {
+            return [];
+        }
+
+        try {
+            $decoded = json_decode($body, true, 512, JSON_THROW_ON_ERROR);
+        } catch (JsonException $exception) {
+            throw new ServerException(
+                'WordPress returned a response that could not be decoded as JSON.',
+                previous: $exception,
+            );
+        }
+
+        if (! is_array($decoded)) {
+            throw new ServerException('WordPress returned a JSON response with an unexpected shape.');
+        }
+
+        /** @var array<string, mixed> $decoded */
+        return $decoded;
     }
 }

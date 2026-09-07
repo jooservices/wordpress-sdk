@@ -7,6 +7,7 @@ namespace JOOservices\WordPress\Sdk\Tests\Unit\Services;
 use InvalidArgumentException;
 use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
+use JOOservices\WordPress\Sdk\Exceptions\ServerException;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class CustomEndpointServiceTest extends TestCase
@@ -49,5 +50,16 @@ final class CustomEndpointServiceTest extends TestCase
         $this->expectException(InvalidArgumentException::class);
 
         $this->wordPress()->custom()->get('https://evil.example.com/api');
+    }
+
+    public function testRejectsMalformedJsonResponse(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::make(200, [], '{invalid'));
+        $this->httpFakes()->respond('GET', '*my-plugin/v1/items*', $sequence);
+
+        $this->expectException(ServerException::class);
+
+        $this->wordPress()->custom()->get('my-plugin/v1/items');
     }
 }

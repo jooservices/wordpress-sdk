@@ -24,4 +24,14 @@ final class ButtonTest extends TestCase
         $rendered = (new Button($this->faker->word(), 'https://example.test/?q="x"'))->render();
         self::assertStringContainsString('href="https://example.test/?q=&quot;x&quot;"', $rendered);
     }
+
+    public function testEscapesUntrustedText(): void
+    {
+        $payload = sprintf('<svg onload="%s">', $this->faker->word());
+
+        self::assertStringContainsString(
+            htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            (new Button($payload, $this->faker->url()))->render(),
+        );
+    }
 }

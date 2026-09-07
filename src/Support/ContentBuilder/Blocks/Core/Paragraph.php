@@ -14,6 +14,7 @@ final class Paragraph extends AbstractBlock
     public function __construct(
         public readonly string $text,
         public readonly array $attributes = [],
+        private readonly bool $escapeText = true,
     ) {}
 
     protected function getName(): string
@@ -37,6 +38,10 @@ final class Paragraph extends AbstractBlock
             $class = ' class="has-text-align-' . $alignment . '"';
         }
 
-        return sprintf('<p%s>%s</p>', $class, $this->text);
+        $text = $this->escapeText
+            ? htmlspecialchars($this->text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            : $this->text;
+
+        return sprintf('<p%s>%s</p>', $class, $text);
     }
 }

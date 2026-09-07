@@ -16,7 +16,7 @@ final class AbilitiesServiceTest extends TestCase
         foreach ([
             ['GET', 'wp-abilities/v1/abilities', 'list', [['category' => 'core']]],
             ['GET', 'wp-abilities/v1/abilities/core/get-info', 'get', ['core/get-info']],
-            ['POST', 'wp-abilities/v1/abilities/core/get-info/run', 'run', ['core/get-info', ['id' => 1]]],
+            ['POST', 'wp-abilities/v1/abilities/core%2Fget-info/run', 'run', ['core/get-info', ['id' => 1]]],
             ['GET', 'wp-abilities/v1/categories', 'categories', []],
             ['GET', 'wp-abilities/v1/categories/core', 'category', ['core']],
         ] as [$verb, $path, $method, $arguments]) {

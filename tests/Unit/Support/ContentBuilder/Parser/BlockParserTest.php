@@ -300,6 +300,11 @@ final class BlockParserTest extends TestCase
 
         self::assertCount(1, $blocks);
         self::assertInstanceOf(HtmlBlock::class, $blocks[0]);
+
+        $blocks = $this->parser->parse('<!-- wp: -->', $this->registry);
+
+        self::assertCount(1, $blocks);
+        self::assertInstanceOf(HtmlBlock::class, $blocks[0]);
     }
 
     public function testInvalidAttributesJsonIsRejected(): void
@@ -308,6 +313,18 @@ final class BlockParserTest extends TestCase
 
         $this->parser->parse(
             "<!-- wp:paragraph not-json -->\n<p>x</p>\n<!-- /wp:paragraph -->",
+            $this->registry,
+        );
+    }
+
+    public function testNonObjectAttributesJsonIsRejected(): void
+    {
+        $content = $this->faker->word();
+
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->parser->parse(
+            "<!-- wp:paragraph true -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->",
             $this->registry,
         );
     }
@@ -322,6 +339,23 @@ final class BlockParserTest extends TestCase
             . "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->"
             . "</section>\n<!-- /wp:group -->"
             . "</div>\n<!-- /wp:group -->";
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertCount(1, $blocks);
+        self::assertInstanceOf(Group::class, $blocks[0]);
+        self::assertSame($source, $blocks[0]->render());
+    }
+
+    public function testRoundTripsDeeplyNestedBlocks(): void
+    {
+        $content = $this->faker->word();
+        $source = "<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->";
+
+        for ($depth = 0; $depth < 50; $depth++) {
+            $source = "<!-- wp:group {\"tagName\":\"div\"} -->\n"
+                . "<div class=\"wp-block-group\">{$source}</div>\n<!-- /wp:group -->";
+        }
 
         $blocks = $this->parser->parse($source, $this->registry);
 

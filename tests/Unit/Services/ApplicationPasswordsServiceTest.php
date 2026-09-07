@@ -74,4 +74,19 @@ final class ApplicationPasswordsServiceTest extends TestCase
         self::assertSame('/wp-json/wp/v2/users/me/application-passwords/abc', $this->lastRequest()->getUri()->getPath());
         $this->assertJsonBody($this->lastRequest(), ['name' => $name]);
     }
+
+    public function testEncodesUserAndUuidPathSegments(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['uuid' => $this->faker->uuid()]));
+        $this->httpFakes()->respond('GET', '*', $sequence);
+
+        $this->wordPress()->applicationPasswords()->get('me/admin', 'x?context=edit');
+
+        self::assertSame(
+            '/wp-json/wp/v2/users/me%2Fadmin/application-passwords/x%3Fcontext%3Dedit',
+            $this->lastRequest()->getUri()->getPath(),
+        );
+        self::assertSame('', $this->lastRequest()->getUri()->getQuery());
+    }
 }

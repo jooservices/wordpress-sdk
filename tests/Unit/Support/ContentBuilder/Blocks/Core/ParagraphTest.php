@@ -20,4 +20,14 @@ final class ParagraphTest extends TestCase
         );
         self::assertSame("<p class=\"has-text-align-center\">{$content}</p>", $block->toHtml());
     }
+
+    public function testEscapesUntrustedText(): void
+    {
+        $payload = sprintf('<script>alert("%s")</script>', $this->faker->word());
+
+        self::assertStringContainsString(
+            htmlspecialchars($payload, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8'),
+            (new Paragraph($payload))->render(),
+        );
+    }
 }

@@ -16,6 +16,7 @@ final class Heading extends AbstractBlock
         public readonly string $text,
         public readonly int $level = 2,
         public readonly array $attributes = [],
+        private readonly bool $escapeText = true,
     ) {
         if ($level < 1 || $level > 6) {
             throw new InvalidArgumentException('Heading level must be between 1 and 6.');
@@ -43,6 +44,10 @@ final class Heading extends AbstractBlock
 
     protected function getContent(): string
     {
-        return sprintf('<h%d>%s</h%d>', $this->level, $this->text, $this->level);
+        $text = $this->escapeText
+            ? htmlspecialchars($this->text, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8')
+            : $this->text;
+
+        return sprintf('<h%d>%s</h%d>', $this->level, $text, $this->level);
     }
 }

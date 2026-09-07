@@ -16,33 +16,39 @@ final class ContentBuilderTest extends TestCase
 {
     public function testRendersBlocksJoinedByBlankLine(): void
     {
+        $title = $this->faker->sentence();
+        $body = $this->faker->paragraph();
         $builder = (new ContentBuilder())
-            ->heading('Title')
-            ->text('Body');
+            ->heading($title)
+            ->text($body);
 
         self::assertSame(
-            "<!-- wp:heading -->\n<h2>Title</h2>\n<!-- /wp:heading -->\n\n"
-            . "<!-- wp:paragraph -->\n<p>Body</p>\n<!-- /wp:paragraph -->",
+            "<!-- wp:heading -->\n<h2>{$title}</h2>\n<!-- /wp:heading -->\n\n"
+            . "<!-- wp:paragraph -->\n<p>{$body}</p>\n<!-- /wp:paragraph -->",
             $builder->render(),
         );
     }
 
     public function testRenderRawJoinsInnerHtml(): void
     {
-        $builder = (new ContentBuilder())->heading('Title')->text('Body');
+        $title = $this->faker->sentence();
+        $body = $this->faker->paragraph();
+        $builder = (new ContentBuilder())->heading($title)->text($body);
 
-        self::assertSame("<h2>Title</h2>\n\n<p>Body</p>", $builder->renderRaw());
+        self::assertSame("<h2>{$title}</h2>\n\n<p>{$body}</p>", $builder->renderRaw());
     }
 
     public function testHtmlAndBlockHelpers(): void
     {
+        $raw = $this->faker->word();
+        $inner = $this->faker->word();
         $builder = (new ContentBuilder())
-            ->html('<div>raw</div>')
-            ->block('my-plugin/widget', ['size' => 2], 'inner');
+            ->html("<div>{$raw}</div>")
+            ->block('my-plugin/widget', ['size' => 2], $inner);
 
         self::assertSame(
-            "<!-- wp:html -->\n<div>raw</div>\n<!-- /wp:html -->\n\n"
-            . "<!-- wp:my-plugin/widget {\"size\":2} -->\ninner\n<!-- /wp:my-plugin/widget -->",
+            "<!-- wp:html -->\n<div>{$raw}</div>\n<!-- /wp:html -->\n\n"
+            . "<!-- wp:my-plugin/widget {\"size\":2} -->\n{$inner}\n<!-- /wp:my-plugin/widget -->",
             $builder->render(),
         );
     }
@@ -59,76 +65,101 @@ final class ContentBuilderTest extends TestCase
         );
     }
 
+    public function testCodeAndShortcodeHelpers(): void
+    {
+        $code = $this->faker->word();
+        $builder = (new ContentBuilder())
+            ->code($code)
+            ->shortcode('[gallery]');
+
+        self::assertStringContainsString('wp:code', $builder->render());
+        self::assertStringContainsString($code, $builder->render());
+        self::assertStringContainsString('wp:shortcode', $builder->render());
+        self::assertStringContainsString('[gallery]', $builder->render());
+    }
+
     public function testQuoteWithCitation(): void
     {
-        $builder = (new ContentBuilder())->quote('To be', 'Shakespeare');
+        $quote = $this->faker->sentence();
+        $citation = $this->faker->name();
+        $builder = (new ContentBuilder())->quote($quote, $citation);
 
         self::assertSame(
-            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>To be</p><cite>Shakespeare</cite></blockquote>\n<!-- /wp:quote -->",
+            "<!-- wp:quote -->\n<blockquote class=\"wp-block-quote\"><p>{$quote}</p><cite>{$citation}</cite></blockquote>\n<!-- /wp:quote -->",
             $builder->render(),
         );
     }
 
     public function testColumnsAndGroup(): void
     {
+        $left = $this->faker->word();
+        $right = $this->faker->word();
+        $button = $this->faker->word();
+        $url = $this->faker->url();
         $builder = (new ContentBuilder())
             ->columns([
-                static function (ContentBuilder $column): void {
-                    $column->text('Left');
+                static function (ContentBuilder $column) use ($left): void {
+                    $column->text($left);
                 },
-                static function (ContentBuilder $column): void {
-                    $column->text('Right');
+                static function (ContentBuilder $column) use ($right): void {
+                    $column->text($right);
                 },
             ])
-            ->group(static function (ContentBuilder $group): void {
-                $group->button('Read more', 'https://example.com');
+            ->group(static function (ContentBuilder $group) use ($button, $url): void {
+                $group->button($button, $url);
             });
 
         $rendered = $builder->render();
 
         self::assertStringContainsString('<!-- wp:columns -->', $rendered);
         self::assertStringContainsString('<!-- wp:column -->', $rendered);
-        self::assertStringContainsString('<p>Left</p>', $rendered);
-        self::assertStringContainsString('<p>Right</p>', $rendered);
+        self::assertStringContainsString("<p>{$left}</p>", $rendered);
+        self::assertStringContainsString("<p>{$right}</p>", $rendered);
         self::assertStringContainsString('<!-- wp:group', $rendered);
         self::assertStringContainsString('<!-- wp:button -->', $rendered);
     }
 
     public function testButtonsHelperAcceptsArraysAndInstances(): void
     {
+        $firstText = $this->faker->word();
+        $firstUrl = $this->faker->url();
+        $secondText = $this->faker->word();
+        $secondUrl = $this->faker->url();
         $builder = (new ContentBuilder())->buttons([
-            ['text' => 'A', 'url' => 'https://a.test'],
-            new Button('B', 'https://b.test'),
+            ['text' => $firstText, 'url' => $firstUrl],
+            new Button($secondText, $secondUrl),
         ]);
 
         $rendered = $builder->render();
 
         self::assertStringContainsString('<!-- wp:buttons -->', $rendered);
         self::assertStringContainsString('<!-- wp:button -->', $rendered);
-        self::assertStringContainsString('href="https://a.test"', $rendered);
-        self::assertStringContainsString('>B</a>', $rendered);
+        self::assertStringContainsString('href="' . $firstUrl . '"', $rendered);
+        self::assertStringContainsString('>' . $secondText . '</a>', $rendered);
     }
 
     public function testImageFromFileUploadsAndBuildsBlock(): void
     {
         $file = tempnam(sys_get_temp_dir(), 'sdk-img');
-        file_put_contents($file, 'img');
+        file_put_contents($file, $this->faker->word());
+        $sourceUrl = $this->faker->imageUrl();
+        $altText = $this->faker->sentence(3);
 
         try {
             $sequence = new TestResponseSequence();
             $sequence->push(TestResponse::json([
                 'id' => 9,
-                'source_url' => 'https://example.test/photo.png',
-                'alt_text' => 'Photo',
+                'source_url' => $sourceUrl,
+                'alt_text' => $this->faker->word(),
             ], 201));
             $this->httpFakes()->respond('POST', '*wp/v2/media*', $sequence);
 
             $wordPress = $this->wordPress();
-            $builder = $wordPress->contentBuilder()->imageFromFile($file, ['alt_text' => 'Custom alt']);
+            $builder = $wordPress->contentBuilder()->imageFromFile($file, ['alt_text' => $altText]);
 
             self::assertSame(
                 "<!-- wp:image {\"id\":9,\"sizeSlug\":\"full\",\"linkDestination\":\"none\"} -->\n"
-                . "<figure class=\"wp-block-image size-full\"><img src=\"https://example.test/photo.png\" alt=\"Custom alt\" class=\"wp-image-9\"/></figure>\n"
+                . "<figure class=\"wp-block-image size-full\"><img src=\"{$sourceUrl}\" alt=\"{$altText}\" class=\"wp-image-9\"/></figure>\n"
                 . "<!-- /wp:image -->",
                 $builder->render(),
             );
@@ -148,20 +179,24 @@ final class ContentBuilderTest extends TestCase
 
     public function testFromHtmlWrapsRawHtml(): void
     {
-        $builder = ContentBuilder::fromHtml('<p>Legacy</p>');
+        $content = $this->faker->sentence();
+        $builder = ContentBuilder::fromHtml("<p>{$content}</p>");
 
         self::assertSame(
-            "<!-- wp:html -->\n<p>Legacy</p>\n<!-- /wp:html -->",
+            "<!-- wp:html -->\n<p>{$content}</p>\n<!-- /wp:html -->",
             $builder->render(),
         );
     }
 
     public function testParseRoundTripsMarkup(): void
     {
+        $heading = $this->faker->word();
+        $paragraph = $this->faker->sentence();
+        $readMore = $this->faker->sentence(2);
         $source = (new ContentBuilder())
-            ->heading('H', 3, ['anchor' => 'h'])
-            ->text('P')
-            ->readMoreButton('Continue');
+            ->heading($heading, 3, ['anchor' => 'h'])
+            ->text($paragraph)
+            ->readMoreButton($readMore);
 
         $parsed = ContentBuilder::parse($source->render());
 
@@ -171,8 +206,9 @@ final class ContentBuilderTest extends TestCase
     public function testParseUsesProvidedRegistry(): void
     {
         $registry = new BlockRegistry();
+        $content = $this->faker->word();
 
-        $parsed = ContentBuilder::parse("<!-- wp:paragraph -->\n<p>x</p>\n<!-- /wp:paragraph -->", $registry);
+        $parsed = ContentBuilder::parse("<!-- wp:paragraph -->\n<p>{$content}</p>\n<!-- /wp:paragraph -->", $registry);
 
         self::assertCount(1, $parsed->getBlocks());
     }
@@ -191,13 +227,13 @@ final class ContentBuilderTest extends TestCase
         $wordPress = $this->wordPress();
 
         $file = tempnam(sys_get_temp_dir(), 'sdk-inner-img');
-        file_put_contents($file, 'img');
+        file_put_contents($file, $this->faker->word());
 
         try {
             $sequence = new TestResponseSequence();
             $sequence->push(TestResponse::json([
                 'id' => 3,
-                'source_url' => 'https://example.test/i.png',
+                'source_url' => $this->faker->imageUrl(),
                 'alt_text' => '',
             ], 201));
             $this->httpFakes()->respond('POST', '*wp/v2/media*', $sequence);

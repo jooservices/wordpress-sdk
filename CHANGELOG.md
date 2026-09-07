@@ -7,6 +7,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [4.1.0] - 2026-09-07
+
+### Added
+
+- `WordPressService::fromClient()` for a pre-built PSR-18 client (bearer/JWT).
+- `resource()` / `terms()` for `show_in_rest` custom post types and taxonomies.
+- Nested `posts()->revisions()` / `autosaves()` (and the same on pages).
+- `UsersService::updateMe()` / `deleteMe()`.
+- `ApplicationPasswordsService::update()` (rename; secret is not rotated).
+- Typed write payloads (`PostPayload`, `PagePayload`, `CommentPayload`,
+  `UserPayload`, `TermPayload`, `ApplicationPasswordPayload`) accepted
+  alongside arrays.
+- Query DTO coverage for `after`/`before`/`offset`/`slug` and related filters.
+- REST enums (`RestContext`, `PostStatus`, `OrderDirection`, `OpenClosed`,
+  `TaxRelation`).
+- `ContentBuilder::code()` / `shortcode()`.
+- Sonar, Codecov, OSV, and a CI `Coverage upload` leaf job.
+
+### Changed
+
+- `MediaService::create()` rejects JSON POSTs; use `upload()`.
+- `PostBuilder` now defaults new posts to WordPress-safe `draft` status;
+  publishing must be requested explicitly.
+- Core-route completeness auditing moved from the production namespace to
+  test-only support.
+- README identity, badges, and WordPress E2E image pin `wordpress:7.1.0`.
+
+### Fixed
+
+- Reject malformed or unexpected JSON response bodies instead of silently
+  returning empty data.
+- Parse nested Gutenberg blocks in linear time without global tokenizer state.
+
+### Security
+
+- Escape paragraph, heading, and button text by default when rendering blocks.
+- Encode dynamic REST path segments and reject encoded traversal segments.
+- Document the irreversible, destructive behavior of
+  `ApplicationPasswordsService::deleteAll()`.
+
 ## [4.0.0] - 2026-09-04
 
 ### Added
@@ -112,5 +152,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FontsService::uploadFace()`.
 - Render multi-paragraph quotes as separate `<p>` elements.
 
-[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.0.0...HEAD
+[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.1.0...HEAD
+[4.1.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.1.0
 [4.0.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.0.0

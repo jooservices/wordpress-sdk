@@ -20,6 +20,8 @@ final class User extends Dto
      * @param list<string>|null $roles
      * @param array<string, bool>|null $capabilities
      * @param array<string, bool>|null $extra_capabilities
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
      */
     public function __construct(
         public readonly int $id = 0,
@@ -40,5 +42,7 @@ final class User extends Dto
         public readonly ?array $roles = null,
         public readonly ?array $capabilities = null,
         public readonly ?array $extra_capabilities = null,
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
 }

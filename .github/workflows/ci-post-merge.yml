@@ -31,6 +31,12 @@ jobs:
           tools/ci/docker-compose run --rm php composer validate --strict
           tools/ci/docker-compose run --rm php composer ci
           tools/test-clean-consumer
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml
+          fail_ci_if_error: true
 
   integration:
     name: WordPress E2E

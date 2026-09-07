@@ -8,10 +8,18 @@ use JOOservices\Client\Resilience\RetryConfig;
 use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Config;
+use JOOservices\WordPress\Sdk\Http\ClientFactory;
+use JOOservices\WordPress\Sdk\Http\ErrorMapper;
+use JOOservices\WordPress\Sdk\Contracts\ResponseDecoderInterface;
+use JOOservices\WordPress\Sdk\Services\MediaService;
+use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
+use JOOservices\Client\Request\RequestBuilder;
+use Psr\Http\Client\ClientInterface;
 use ReflectionMethod;
 use ReflectionNamedType;
+use ReflectionProperty;
 
 final class WordPressServiceTest extends TestCase
 {
@@ -52,9 +60,11 @@ final class WordPressServiceTest extends TestCase
     public function testServicesAreLazilyCachedPerFacade(): void
     {
         $wordPress = $this->wordPress();
+        $taxonomy = $this->faker->slug();
 
         self::assertSame($wordPress->posts(), $wordPress->posts());
         self::assertSame($wordPress->media(), $wordPress->media());
+        self::assertSame($wordPress->terms($taxonomy), $wordPress->terms($taxonomy));
     }
 
     public function testEveryAccessorReturnsItsDeclaredServiceType(): void
@@ -87,15 +97,54 @@ final class WordPressServiceTest extends TestCase
 
         $builder = $wordPress->posts()->builder();
 
-        self::assertSame($wordPress->media(), $wordPress->media());
+        $mediaService = (new ReflectionProperty($builder, 'mediaService'))->getValue($builder);
+
+        self::assertSame($wordPress->media(), $mediaService);
+    }
+
+    public function testDirectPostsServiceConstructionProvidesMediaToBuilder(): void
+    {
+        $wordPress = $this->wordPress();
+        $client = (new ReflectionProperty($wordPress, 'client'))->getValue($wordPress);
+        $requestBuilder = (new ReflectionProperty($wordPress, 'requestBuilder'))->getValue($wordPress);
+        $decoder = (new ReflectionProperty($wordPress, 'decoder'))->getValue($wordPress);
+        $errorMapper = (new ReflectionProperty($wordPress, 'errorMapper'))->getValue($wordPress);
+
+        self::assertInstanceOf(ClientInterface::class, $client);
+        self::assertInstanceOf(RequestBuilder::class, $requestBuilder);
+        self::assertInstanceOf(ResponseDecoderInterface::class, $decoder);
+        self::assertInstanceOf(ErrorMapper::class, $errorMapper);
+
+        $posts = new PostsService($client, $requestBuilder, $decoder, $errorMapper);
+        $mediaService = (new ReflectionProperty($posts->builder(), 'mediaService'))->getValue($posts->builder());
+
+        self::assertInstanceOf(MediaService::class, $mediaService);
     }
 
     public function testContentBuilderIsWiredWithMediaService(): void
     {
         $wordPress = $this->wordPress();
 
-        $builder = $wordPress->contentBuilder()->text('Hello');
+        $builder = $wordPress->contentBuilder()->text($this->faker->sentence());
 
         self::assertStringContainsString('wp:paragraph', $builder->render());
+    }
+
+    public function testFromClientUsesInjectedTransport(): void
+    {
+        $config = new Config(
+            'https://example.test',
+            'admin',
+            'pass',
+            retry: new RetryConfig(maxAttempts: 1),
+        );
+        $client = (new ClientFactory())->create($config);
+        $wordPress = WordPressService::fromClient($client);
+
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json(['id' => 4, 'title' => ['rendered' => $this->faker->word()]]));
+        $this->httpFakes()->respond('GET', '*wp/v2/posts/4*', $sequence);
+
+        self::assertSame(4, $wordPress->posts()->get(4)->id);
     }
 }

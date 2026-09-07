@@ -15,6 +15,9 @@ class Post extends Dto
      * @param list<int> $categories
      * @param list<int> $tags
      * @param array<string, mixed> $meta
+     * @param list<string> $class_list
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
      */
     public function __construct(
         public readonly int $id = 0,
@@ -40,5 +43,13 @@ class Post extends Dto
         public readonly array $meta = [],
         public readonly array $categories = [],
         public readonly array $tags = [],
+        public readonly ?string $password = null,
+        public readonly string $permalink_template = '',
+        public readonly string $generated_slug = '',
+        public readonly array $class_list = [],
+        public readonly int $parent = 0,
+        public readonly int $menu_order = 0,
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
 }

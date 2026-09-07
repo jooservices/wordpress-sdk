@@ -2,6 +2,9 @@
 
 ## Typed (DTO + query DTO)
 
+List DTOs retain dynamic WordPress relation maps through `_links` and
+`_embedded`; relation names remain schema-defined array keys.
+
 | Route | Service | Read | Write | Notes |
 | --- | --- | --- | --- | --- |
 | `/wp/v2/posts` | `posts()` | get/list/all/cursor/each | create/update/delete | `Post`, `ListPostsQuery` |
@@ -40,13 +43,14 @@ v1, and oEmbed.
 
 ## Completeness and remaining design work
 
-- `CoreRouteSupport` matches live discovery routes to SDK-covered patterns
+- The test-only `CoreRouteSupport` audit matches live discovery routes to
+  SDK-covered patterns
   derived from `Endpoint` plus known nested subresources (not bare namespace
   prefixes). An unknown default core route fails E2E until the SDK declares it.
 - Revisions and autosaves share one post-backed resource allowlist
   (`PostBackedResources`).
-- Application passwords have no per-UUID update route in WordPress 7.1; the
-  supported core operations are list/get/create/introspect/delete/delete-all.
+- Application passwords support list/get/create/update (rename)/introspect/
+  delete/delete-all. WordPress does not rotate the generated secret on update.
 - ETag/Last-Modified conditional request helpers.
 - Typed payload DTOs for `create()`/`update()` (payloads stay raw arrays).
 

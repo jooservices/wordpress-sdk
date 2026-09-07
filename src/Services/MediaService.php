@@ -6,6 +6,7 @@ namespace JOOservices\WordPress\Sdk\Services;
 
 use InvalidArgumentException;
 use JOOservices\Client\Request\MultipartPart;
+use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Data\Media;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 
@@ -14,6 +15,21 @@ use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
  */
 final class MediaService extends AbstractCrudService
 {
+    /**
+     * JSON POST is not a supported WordPress media create. Use {@see upload()}.
+     *
+     * @param array<string, mixed>|PayloadInterface $payload
+     */
+    #[\Override]
+    public function create(array|PayloadInterface $payload): object
+    {
+        unset($payload);
+
+        throw new InvalidArgumentException(
+            'Creating media requires a multipart upload. Use MediaService::upload().',
+        );
+    }
+
     /** @return array<string, mixed> */
     public function postProcess(int $id, string $action): array
     {

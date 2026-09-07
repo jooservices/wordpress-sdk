@@ -17,6 +17,7 @@ final class DiscoveryService extends AbstractService
      */
     public function index(): array
     {
+        // RFC 3986 current-directory reference preserves the configured /wp-json/ root.
         return $this->requestArray('GET', '.');
     }
 

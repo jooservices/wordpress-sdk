@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Data\Query;
 
+use JOOservices\WordPress\Sdk\Enums\OrderDirection;
+use JOOservices\WordPress\Sdk\Enums\RestContext;
+
 final class SearchQuery extends AbstractListQuery
 {
     /**
@@ -16,9 +19,9 @@ final class SearchQuery extends AbstractListQuery
         ?int $page = null,
         ?int $perPage = null,
         ?string $search = null,
-        ?string $context = null,
+        RestContext|string|null $context = null,
         ?string $orderby = null,
-        ?string $order = null,
+        OrderDirection|string|null $order = null,
         ?array $include = null,
         ?array $exclude = null,
         ?string $fields = null,

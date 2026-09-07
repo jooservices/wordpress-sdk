@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Tests;
 
+use Faker\Factory;
+use Faker\Generator;
 use JOOservices\Client\Client\ClientBuilder;
 use JOOservices\Client\Resilience\RetryConfig;
 use JOOservices\Client\Testing\InteractsWithHttpClient;
 use JOOservices\WordPress\Sdk\WordPressService;
-use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase as BaseTestCase;
 use Psr\Http\Message\RequestInterface;
 
@@ -20,9 +21,12 @@ abstract class TestCase extends BaseTestCase
 {
     use InteractsWithHttpClient;
 
+    protected Generator $faker;
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->faker = Factory::create();
         $this->setUpHttpFakes();
         ClientBuilder::fake($this->httpFakes());
     }

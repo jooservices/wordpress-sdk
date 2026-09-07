@@ -8,6 +8,7 @@ use JOOservices\Client\Testing\TestResponse;
 use JOOservices\Client\Testing\TestResponseSequence;
 use JOOservices\WordPress\Sdk\Data\Post;
 use JOOservices\WordPress\Sdk\Exceptions\NotFoundException;
+use JOOservices\WordPress\Sdk\Exceptions\ServerException;
 use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Tests\TestCase;
 use JOOservices\WordPress\Sdk\WordPressService;
@@ -27,30 +28,33 @@ final class AbstractServiceTest extends TestCase
 
     public function testQueryOptionsAreAppendedToUri(): void
     {
+        $title = $this->faker->sentence(2);
+        $password = $this->faker->password();
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 1, 'title' => ['rendered' => 'A']]));
+        $sequence->push(TestResponse::json(['id' => 1, 'title' => ['rendered' => $title]]));
         $this->httpFakes()->respond('GET', '*wp/v2/posts/1*', $sequence);
 
-        $post = $this->service->get(1, ['context' => 'edit', 'password' => 'x']);
+        $post = $this->service->get(1, ['context' => 'edit', 'password' => $password]);
 
         self::assertSame(1, $post->id);
-        $this->assertQuery($this->lastRequest(), ['context' => 'edit', 'password' => 'x']);
+        $this->assertQuery($this->lastRequest(), ['context' => 'edit', 'password' => $password]);
         self::assertSame('/wp-json/wp/v2/posts/1', $this->lastRequest()->getUri()->getPath());
     }
 
     public function testJsonBodyOptionsAreSent(): void
     {
+        $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 9, 'title' => ['rendered' => 'New']], 201));
+        $sequence->push(TestResponse::json(['id' => 9, 'title' => ['rendered' => $title]], 201));
         $this->httpFakes()->respond('POST', '*wp/v2/posts*', $sequence);
 
-        $post = $this->service->create(['title' => 'New', 'status' => 'publish']);
+        $post = $this->service->create(['title' => $title, 'status' => 'publish']);
 
         self::assertSame(9, $post->id);
         $request = $this->lastRequest();
         self::assertSame('POST', $request->getMethod());
         self::assertSame('application/json', $request->getHeaderLine('Content-Type'));
-        $this->assertJsonBody($request, ['title' => 'New', 'status' => 'publish']);
+        $this->assertJsonBody($request, ['title' => $title, 'status' => 'publish']);
     }
 
     public function testErrorStatusThrowsMappedException(): void
@@ -70,17 +74,18 @@ final class AbstractServiceTest extends TestCase
 
     public function testDeleteUnwrapsForceDeletePayload(): void
     {
+        $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([
             'deleted' => true,
-            'previous' => ['id' => 5, 'title' => ['rendered' => 'Gone']],
+            'previous' => ['id' => 5, 'title' => ['rendered' => $title]],
         ], JSON_THROW_ON_ERROR)));
         $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
 
         $post = $this->service->delete(5, force: true);
 
         self::assertSame(5, $post->id);
-        self::assertSame('Gone', $post->title?->rendered);
+        self::assertSame($title, $post->title?->rendered);
         $this->assertQuery($this->lastRequest(), ['force' => 'true']);
     }
 
@@ -107,6 +112,45 @@ final class AbstractServiceTest extends TestCase
         self::assertSame(0, $post->id);
     }
 
+    public function testDeleteRejectsMalformedJsonResponse(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::make(200, [], '{invalid'));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        $this->expectException(ServerException::class);
+
+        $this->service->delete(5);
+    }
+
+    public function testDeleteRejectsUnexpectedJsonShape(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::make(200, [], json_encode($this->faker->word(), JSON_THROW_ON_ERROR)));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        $this->expectException(ServerException::class);
+
+        $this->service->delete(5);
+    }
+
+    public function testDeleteRejectsJsonLists(): void
+    {
+        $sequence = new TestResponseSequence();
+        $sequence->push(TestResponse::json([]));
+        $sequence->push(TestResponse::json([['id' => $this->faker->numberBetween(1)]]));
+        $this->httpFakes()->respond('DELETE', '*wp/v2/posts/5*', $sequence);
+
+        foreach (range(1, 2) as $attempt) {
+            try {
+                $this->service->delete(5);
+                self::fail(sprintf('Expected JSON list response %d to be rejected.', $attempt));
+            } catch (ServerException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
     public function testCursorStreamsAcrossPages(): void
     {
         $this->respondPages(3, 2);
@@ -124,6 +168,15 @@ final class AbstractServiceTest extends TestCase
         $this->respondPages(5, 2);
 
         $posts = iterator_to_array($this->service->cursor(['per_page' => 2, 'page' => 2]), false);
+
+        self::assertSame([3, 4, 5], array_map(static fn(Post $post): int => $post->id, $posts));
+    }
+
+    public function testCursorHonorsNumericStringStartPage(): void
+    {
+        $this->respondPages(5, 2);
+
+        $posts = iterator_to_array($this->service->cursor(['per_page' => 2, 'page' => '2']), false);
 
         self::assertSame([3, 4, 5], array_map(static fn(Post $post): int => $post->id, $posts));
     }
@@ -185,7 +238,7 @@ final class AbstractServiceTest extends TestCase
         for ($page = 1; $page <= $totalPages; $page++) {
             $items = [];
             for ($i = ($page - 1) * $perPage + 1; $i <= min($total, $page * $perPage); $i++) {
-                $items[] = ['id' => $i, 'title' => ['rendered' => 'Post ' . $i]];
+                $items[] = ['id' => $i, 'title' => ['rendered' => $this->faker->sentence(2)]];
             }
 
             $sequence = new TestResponseSequence();

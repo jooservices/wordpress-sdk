@@ -26,17 +26,18 @@ All PHP tooling runs through Docker:
 
 ```bash
 make install   # build image + composer install
-make lint      # pint --test + phpstan (level max)
+make lint      # aggregate Pint + PHPCS + PHPStan + PHPMD + PHP-CS-Fixer checks
 make test      # phpunit Unit suite
 make clean-consumer
 make integration
 make ci        # lint + coverage + audit
-make hooks-install # opt-in; never runs during Composer install
+make hooks-install # opt-in; runs project hooks through the Docker PHP wrapper
 ```
 
 ## Quality gates
 
-- Pint `per` preset (PER-CS 3.0) and PHPStan level `max` on `src/` and `tests/`.
+- Pint `per` preset (PER-CS 3.0), PHPCS, PHPStan level `max`, PHPMD, and
+  PHP-CS-Fixer run through the aggregate lint command on `src/` and `tests/`.
 - Every change ships with tests that exercise the real request path through
   `jooservices/client` fakes — no mock-only service tests.
 - Coverage gate: aggregate statement coverage >= 90%; no coverable file,

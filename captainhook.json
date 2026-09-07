@@ -20,7 +20,7 @@
                 "conditions": []
             },
             {
-                "action": "echo 'Running linters...' && composer lint",
+                "action": "echo 'Running linters...' && tools/ci/docker-compose run --rm php composer lint",
                 "conditions": []
             }
         ]
@@ -33,7 +33,7 @@
                 "conditions": []
             },
             {
-                "action": "echo 'Running tests...' && composer test",
+                "action": "echo 'Running tests...' && tools/ci/docker-compose run --rm php composer test",
                 "conditions": []
             }
         ]

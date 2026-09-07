@@ -11,11 +11,35 @@ use JOOservices\Dto\Core\Dto;
  */
 final class SearchResult extends Dto
 {
+    /**
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
+     */
     public function __construct(
-        public readonly int $id = 0,
+        public readonly int|string $id = 0,
         public readonly string $title = '',
         public readonly string $url = '',
         public readonly string $type = '',
         public readonly string $subtype = '',
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
+
+    /**
+     * @param array<string, mixed> $data
+     * @return array<string, mixed>
+     */
+    #[\Override]
+    protected static function transformInput(array $data): array
+    {
+        $id = $data['id'] ?? null;
+        if (is_string($id)) {
+            $integerId = filter_var($id, FILTER_VALIDATE_INT);
+            if ($integerId !== false) {
+                $data['id'] = $integerId;
+            }
+        }
+
+        return $data;
+    }
 }

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Services;
 
+use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Data\ApplicationPassword;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
 use JOOservices\WordPress\Sdk\Http\AbstractService;
@@ -33,23 +34,41 @@ final class ApplicationPasswordsService extends AbstractService
      * The raw generated password is only present in the create response.
      * Store it immediately and never log it.
      *
-     * @param array<string, mixed> $payload
+     * @param array<string, mixed>|PayloadInterface $payload
      */
-    public function create(int|string $userId, array $payload): ApplicationPassword
+    public function create(int|string $userId, array|PayloadInterface $payload): ApplicationPassword
     {
         /** @var ApplicationPassword */
-        return $this->createItem($this->path($userId), $payload, ApplicationPassword::class);
+        return $this->createItem($this->path($userId), $this->payloadArray($payload), ApplicationPassword::class);
     }
 
     /**
-     * @return array<string, mixed>
+     * Rename (or otherwise update) an application password. WordPress does
+     * not rotate the secret on this route.
+     *
+     * @param array<string, mixed>|PayloadInterface $payload
      */
+    public function update(int|string $userId, string $uuid, array|PayloadInterface $payload): ApplicationPassword
+    {
+        /** @var ApplicationPassword */
+        return $this->updateItem(
+            $this->path($userId, $uuid),
+            $this->payloadArray($payload),
+            ApplicationPassword::class,
+        );
+    }
+
+    /** @return array<string, mixed> */
     public function delete(int|string $userId, string $uuid): array
     {
         return $this->requestArray('DELETE', $this->path($userId, $uuid));
     }
 
     /**
+     * Permanently revokes every application password for the selected user.
+     * This bulk operation cannot be undone; callers must obtain confirmation
+     * before invoking it from an interactive workflow.
+     *
      * @return array<string, mixed>
      */
     public function deleteAll(int|string $userId): array
@@ -67,6 +86,6 @@ final class ApplicationPasswordsService extends AbstractService
     {
         $path = Endpoint::USERS->withChild($userId, 'application-passwords');
 
-        return $uuid === null ? $path : $path . '/' . $uuid;
+        return $uuid === null ? $path : $path . '/' . rawurlencode($uuid);
     }
 }

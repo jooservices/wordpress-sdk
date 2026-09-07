@@ -7,6 +7,7 @@ namespace JOOservices\WordPress\Sdk;
 use JOOservices\Client\Resilience\RetryConfig;
 use JOOservices\Client\Request\RequestBuilder;
 use JOOservices\WordPress\Sdk\Contracts\ResponseDecoderInterface;
+use JOOservices\WordPress\Sdk\Http\AbstractService;
 use JOOservices\WordPress\Sdk\Http\ClientFactory;
 use JOOservices\WordPress\Sdk\Http\ErrorMapper;
 use JOOservices\WordPress\Sdk\Http\ResponseDecoder;
@@ -34,6 +35,7 @@ use JOOservices\WordPress\Sdk\Services\PatternsService;
 use JOOservices\WordPress\Sdk\Services\PluginsService;
 use JOOservices\WordPress\Sdk\Services\PostsService;
 use JOOservices\WordPress\Sdk\Services\PostTypesService;
+use JOOservices\WordPress\Sdk\Services\ResourceService;
 use JOOservices\WordPress\Sdk\Services\RevisionsService;
 use JOOservices\WordPress\Sdk\Services\SearchService;
 use JOOservices\WordPress\Sdk\Services\SettingsService;
@@ -42,6 +44,7 @@ use JOOservices\WordPress\Sdk\Services\SiteHealthService;
 use JOOservices\WordPress\Sdk\Services\StatusesService;
 use JOOservices\WordPress\Sdk\Services\TagsService;
 use JOOservices\WordPress\Sdk\Services\TaxonomiesService;
+use JOOservices\WordPress\Sdk\Services\TermsService;
 use JOOservices\WordPress\Sdk\Services\TemplatePartsService;
 use JOOservices\WordPress\Sdk\Services\TemplatesService;
 use JOOservices\WordPress\Sdk\Services\ThemesService;
@@ -51,6 +54,7 @@ use JOOservices\WordPress\Sdk\Services\UsersService;
 use JOOservices\WordPress\Sdk\Services\WidgetsService;
 use JOOservices\WordPress\Sdk\Services\WidgetTypesService;
 use JOOservices\WordPress\Sdk\Support\ContentBuilder\ContentBuilder;
+use JOOservices\WordPress\Sdk\Support\RestPath;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Psr\Http\Client\ClientInterface;
 use Psr\Log\LoggerInterface;
@@ -75,53 +79,7 @@ use Psr\Log\LoggerInterface;
 final class WordPressService
 {
     /**
-     * @var array<string, class-string>
-     */
-    private const REGISTRY = [
-        'posts' => PostsService::class,
-        'pages' => PagesService::class,
-        'comments' => CommentsService::class,
-        'users' => UsersService::class,
-        'media' => MediaService::class,
-        'categories' => CategoriesService::class,
-        'tags' => TagsService::class,
-        'search' => SearchService::class,
-        'taxonomies' => TaxonomiesService::class,
-        'postTypes' => PostTypesService::class,
-        'statuses' => StatusesService::class,
-        'settings' => SettingsService::class,
-        'applicationPasswords' => ApplicationPasswordsService::class,
-        'discovery' => DiscoveryService::class,
-        'custom' => CustomEndpointService::class,
-        'revisions' => RevisionsService::class,
-        'plugins' => PluginsService::class,
-        'themes' => ThemesService::class,
-        'blocks' => BlocksService::class,
-        'blockTypes' => BlockTypesService::class,
-        'blockRenderer' => BlockRendererService::class,
-        'blockDirectory' => BlockDirectoryService::class,
-        'menuLocations' => MenuLocationsService::class,
-        'navigations' => NavigationsService::class,
-        'navMenus' => NavMenusService::class,
-        'navMenuItems' => NavMenuItemsService::class,
-        'templates' => TemplatesService::class,
-        'templateParts' => TemplatePartsService::class,
-        'globalStyles' => GlobalStylesService::class,
-        'widgets' => WidgetsService::class,
-        'widgetTypes' => WidgetTypesService::class,
-        'sidebars' => SidebarsService::class,
-        'siteHealth' => SiteHealthService::class,
-        'autosaves' => AutosavesService::class,
-        'patterns' => PatternsService::class,
-        'fonts' => FontsService::class,
-        'editor' => EditorService::class,
-        'abilities' => AbilitiesService::class,
-        'icons' => IconsService::class,
-        'utility' => UtilityService::class,
-    ];
-
-    /**
-     * @var array<string, object>
+     * @var array<string, AbstractService>
      */
     private array $services = [];
 
@@ -159,254 +117,289 @@ final class WordPressService
 
     public static function fromConfig(Config $config): self
     {
+        return self::fromClient(
+            (new ClientFactory())->create($config),
+            logger: $config->logger,
+        );
+    }
+
+    /**
+     * Advanced entry point: inject a pre-built PSR-18 client (bearer, JWT,
+     * custom middleware) while the SDK still owns request building, decoding,
+     * and error mapping.
+     */
+    public static function fromClient(
+        ClientInterface $client,
+        ?RequestBuilder $requestBuilder = null,
+        ?ResponseDecoderInterface $decoder = null,
+        ?ErrorMapper $errorMapper = null,
+        ?LoggerInterface $logger = null,
+    ): self {
         $psr17 = new Psr17Factory();
 
         return new self(
-            (new ClientFactory())->create($config),
-            new RequestBuilder($psr17, $psr17, $psr17),
-            new ResponseDecoder($config->logger),
-            new ErrorMapper(),
+            $client,
+            $requestBuilder ?? new RequestBuilder($psr17, $psr17, $psr17),
+            $decoder ?? new ResponseDecoder($logger),
+            $errorMapper ?? new ErrorMapper(),
         );
     }
 
     public function posts(): PostsService
     {
-        /** @var PostsService */
-        return $this->service('posts');
+        $service = $this->services[PostsService::class] ?? null;
+
+        return $service instanceof PostsService
+            ? $service
+            : $this->services[PostsService::class] = new PostsService(
+                $this->client,
+                $this->requestBuilder,
+                $this->decoder,
+                $this->errorMapper,
+                $this->media(),
+            );
     }
 
     public function pages(): PagesService
     {
-        /** @var PagesService */
-        return $this->service('pages');
+        return $this->service(PagesService::class);
     }
 
     public function comments(): CommentsService
     {
-        /** @var CommentsService */
-        return $this->service('comments');
+        return $this->service(CommentsService::class);
     }
 
     public function users(): UsersService
     {
-        /** @var UsersService */
-        return $this->service('users');
+        return $this->service(UsersService::class);
     }
 
     public function media(): MediaService
     {
-        /** @var MediaService */
-        return $this->service('media');
+        return $this->service(MediaService::class);
     }
 
     public function categories(): CategoriesService
     {
-        /** @var CategoriesService */
-        return $this->service('categories');
+        return $this->service(CategoriesService::class);
     }
 
     public function tags(): TagsService
     {
-        /** @var TagsService */
-        return $this->service('tags');
+        return $this->service(TagsService::class);
     }
 
     public function search(): SearchService
     {
-        /** @var SearchService */
-        return $this->service('search');
+        return $this->service(SearchService::class);
     }
 
     public function taxonomies(): TaxonomiesService
     {
-        /** @var TaxonomiesService */
-        return $this->service('taxonomies');
+        return $this->service(TaxonomiesService::class);
     }
 
     public function postTypes(): PostTypesService
     {
-        /** @var PostTypesService */
-        return $this->service('postTypes');
+        return $this->service(PostTypesService::class);
     }
 
     public function statuses(): StatusesService
     {
-        /** @var StatusesService */
-        return $this->service('statuses');
+        return $this->service(StatusesService::class);
     }
 
     public function settings(): SettingsService
     {
-        /** @var SettingsService */
-        return $this->service('settings');
+        return $this->service(SettingsService::class);
     }
 
     public function applicationPasswords(): ApplicationPasswordsService
     {
-        /** @var ApplicationPasswordsService */
-        return $this->service('applicationPasswords');
+        return $this->service(ApplicationPasswordsService::class);
     }
 
     public function discovery(): DiscoveryService
     {
-        /** @var DiscoveryService */
-        return $this->service('discovery');
+        return $this->service(DiscoveryService::class);
     }
 
     public function custom(): CustomEndpointService
     {
-        /** @var CustomEndpointService */
-        return $this->service('custom');
+        return $this->service(CustomEndpointService::class);
     }
 
     public function revisions(): RevisionsService
     {
-        /** @var RevisionsService */
-        return $this->service('revisions');
+        return $this->service(RevisionsService::class);
     }
 
     public function plugins(): PluginsService
     {
-        /** @var PluginsService */
-        return $this->service('plugins');
+        return $this->service(PluginsService::class);
     }
 
     public function themes(): ThemesService
     {
-        /** @var ThemesService */
-        return $this->service('themes');
+        return $this->service(ThemesService::class);
     }
 
     public function blocks(): BlocksService
     {
-        /** @var BlocksService */
-        return $this->service('blocks');
+        return $this->service(BlocksService::class);
     }
 
     public function blockTypes(): BlockTypesService
     {
-        /** @var BlockTypesService */
-        return $this->service('blockTypes');
+        return $this->service(BlockTypesService::class);
     }
 
     public function blockRenderer(): BlockRendererService
     {
-        /** @var BlockRendererService */
-        return $this->service('blockRenderer');
+        return $this->service(BlockRendererService::class);
     }
 
     public function blockDirectory(): BlockDirectoryService
     {
-        /** @var BlockDirectoryService */
-        return $this->service('blockDirectory');
+        return $this->service(BlockDirectoryService::class);
     }
 
     public function menuLocations(): MenuLocationsService
     {
-        /** @var MenuLocationsService */
-        return $this->service('menuLocations');
+        return $this->service(MenuLocationsService::class);
     }
 
     public function navigations(): NavigationsService
     {
-        /** @var NavigationsService */
-        return $this->service('navigations');
+        return $this->service(NavigationsService::class);
     }
 
     public function navMenus(): NavMenusService
     {
-        /** @var NavMenusService */
-        return $this->service('navMenus');
+        return $this->service(NavMenusService::class);
     }
 
     public function navMenuItems(): NavMenuItemsService
     {
-        /** @var NavMenuItemsService */
-        return $this->service('navMenuItems');
+        return $this->service(NavMenuItemsService::class);
     }
 
     public function templates(): TemplatesService
     {
-        /** @var TemplatesService */
-        return $this->service('templates');
+        return $this->service(TemplatesService::class);
     }
 
     public function templateParts(): TemplatePartsService
     {
-        /** @var TemplatePartsService */
-        return $this->service('templateParts');
+        return $this->service(TemplatePartsService::class);
     }
 
     public function globalStyles(): GlobalStylesService
     {
-        /** @var GlobalStylesService */
-        return $this->service('globalStyles');
+        return $this->service(GlobalStylesService::class);
     }
 
     public function widgets(): WidgetsService
     {
-        /** @var WidgetsService */
-        return $this->service('widgets');
+        return $this->service(WidgetsService::class);
     }
 
     public function widgetTypes(): WidgetTypesService
     {
-        /** @var WidgetTypesService */
-        return $this->service('widgetTypes');
+        return $this->service(WidgetTypesService::class);
     }
 
     public function sidebars(): SidebarsService
     {
-        /** @var SidebarsService */
-        return $this->service('sidebars');
+        return $this->service(SidebarsService::class);
     }
 
     public function siteHealth(): SiteHealthService
     {
-        /** @var SiteHealthService */
-        return $this->service('siteHealth');
+        return $this->service(SiteHealthService::class);
     }
 
     public function autosaves(): AutosavesService
     {
-        /** @var AutosavesService */
-        return $this->service('autosaves');
+        return $this->service(AutosavesService::class);
     }
 
     public function patterns(): PatternsService
     {
-        /** @var PatternsService */
-        return $this->service('patterns');
+        return $this->service(PatternsService::class);
     }
 
     public function fonts(): FontsService
     {
-        /** @var FontsService */
-        return $this->service('fonts');
+        return $this->service(FontsService::class);
     }
 
     public function editor(): EditorService
     {
-        /** @var EditorService */
-        return $this->service('editor');
+        return $this->service(EditorService::class);
     }
 
     public function abilities(): AbilitiesService
     {
-        /** @var AbilitiesService */
-        return $this->service('abilities');
+        return $this->service(AbilitiesService::class);
     }
 
     public function icons(): IconsService
     {
-        /** @var IconsService */
-        return $this->service('icons');
+        return $this->service(IconsService::class);
     }
 
     public function utility(): UtilityService
     {
-        /** @var UtilityService */
-        return $this->service('utility');
+        return $this->service(UtilityService::class);
+    }
+
+    /**
+     * Typed CRUD for a `show_in_rest` custom post type (or any post-schema
+     * collection). Bare slugs resolve under `wp/v2/`.
+     */
+    public function resource(string $restBase): ResourceService
+    {
+        $path = (new RestPath())->collection($restBase);
+        $key = 'resource:' . $path;
+        $service = $this->services[$key] ?? null;
+
+        return $service instanceof ResourceService
+            ? $service
+            : $this->services[$key] = new ResourceService(
+                $this->client,
+                $this->requestBuilder,
+                $this->decoder,
+                $this->errorMapper,
+                $path,
+            );
+    }
+
+    /**
+     * Typed CRUD for a `show_in_rest` custom taxonomy (or categories/tags
+     * by rest_base). Bare slugs resolve under `wp/v2/`.
+     *
+     * @param bool $hierarchical whether the taxonomy is hierarchical;
+     *                           hierarchical taxonomies paginate via
+     *                           `page`/`per_page` and ignore `offset`
+     */
+    public function terms(string $restBase, bool $hierarchical = false): TermsService
+    {
+        $path = (new RestPath())->collection($restBase);
+        $key = 'terms:' . $path . ($hierarchical ? ':hierarchical' : '');
+        $service = $this->services[$key] ?? null;
+
+        return $service instanceof TermsService
+            ? $service
+            : $this->services[$key] = new TermsService(
+                $this->client,
+                $this->requestBuilder,
+                $this->decoder,
+                $this->errorMapper,
+                $path,
+                $hierarchical,
+            );
     }
 
     /**
@@ -418,34 +411,28 @@ final class WordPressService
     }
 
     /**
-     * @param string $key service registry key
+     * @template TService of AbstractService
+     *
+     * @param class-string<TService> $className
+     *
+     * @return TService
      */
-    private function service(string $key): object
+    private function service(string $className): AbstractService
     {
-        return $this->services[$key] ??= $this->instantiate($key);
-    }
+        $service = $this->services[$className] ?? null;
 
-    private function instantiate(string $key): object
-    {
-        $service = new ($this->registryClass($key))(
+        if ($service instanceof $className) {
+            return $service;
+        }
+
+        $service = new $className(
             $this->client,
             $this->requestBuilder,
             $this->decoder,
             $this->errorMapper,
         );
-
-        if ($service instanceof PostsService) {
-            $service->setMediaService($this->media());
-        }
+        $this->services[$className] = $service;
 
         return $service;
-    }
-
-    /**
-     * @return class-string
-     */
-    private function registryClass(string $key): string
-    {
-        return self::REGISTRY[$key];
     }
 }

@@ -14,6 +14,8 @@ final class Comment extends Dto
     /**
      * @param array<string, string> $author_avatar_urls
      * @param array<string, mixed> $meta
+     * @param array<string, list<array<string, mixed>>> $_links
+     * @param array<string, list<array<string, mixed>>> $_embedded
      */
     public function __construct(
         public readonly int $id = 0,
@@ -21,7 +23,10 @@ final class Comment extends Dto
         public readonly int $parent = 0,
         public readonly int $author = 0,
         public readonly string $author_name = '',
+        public readonly ?string $author_email = null,
         public readonly string $author_url = '',
+        public readonly ?string $author_ip = null,
+        public readonly ?string $author_user_agent = null,
         public readonly string $date = '',
         public readonly string $date_gmt = '',
         public readonly ?RenderedContent $content = null,
@@ -30,5 +35,7 @@ final class Comment extends Dto
         public readonly string $type = '',
         public readonly array $author_avatar_urls = [],
         public readonly array $meta = [],
+        public readonly array $_links = [],
+        public readonly array $_embedded = [],
     ) {}
 }

@@ -79,27 +79,24 @@ final class MediaServiceTest extends TestCase
         self::assertSame('/wp-json/wp/v2/media/3', $this->lastRequest()->getUri()->getPath());
     }
 
-    public function testUsersMeReturnsAuthenticatedUser(): void
+    public function testCreateRejectsJsonPost(): void
     {
-        $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 1, 'name' => 'Admin']));
-        $this->httpFakes()->respond('GET', '*wp/v2/users/me*', $sequence);
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('multipart upload');
 
-        $user = $this->wordPress->users()->me();
-
-        self::assertSame(1, $user->id);
-        self::assertSame('/wp-json/wp/v2/users/me', $this->lastRequest()->getUri()->getPath());
+        $this->wordPress->media()->create(['title' => $this->faker->sentence(2)]);
     }
 
-    public function testUsersCrudUsesUsersEndpoint(): void
+    public function testPostProcessesAndEditsMedia(): void
     {
-        $sequence = new TestResponseSequence();
-        $sequence->push(TestResponse::json(['id' => 7, 'name' => 'New User'], 201));
-        $this->httpFakes()->respond('POST', '*wp/v2/users*', $sequence);
+        $postProcess = new TestResponseSequence();
+        $postProcess->push(TestResponse::json(['id' => 4]));
+        $this->httpFakes()->respond('POST', '*wp/v2/media/4/post-process*', $postProcess);
+        self::assertSame(['id' => 4], $this->wordPress->media()->postProcess(4, 'create-image-subsizes'));
 
-        $user = $this->wordPress->users()->create(['name' => 'New User', 'username' => 'newuser']);
-
-        self::assertSame(7, $user->id);
-        $this->assertJsonBody($this->lastRequest(), ['name' => 'New User', 'username' => 'newuser']);
+        $edit = new TestResponseSequence();
+        $edit->push(TestResponse::json(['id' => 4]));
+        $this->httpFakes()->respond('POST', '*wp/v2/media/4/edit*', $edit);
+        self::assertSame(['id' => 4], $this->wordPress->media()->edit(4, ['rotation' => 90]));
     }
 }

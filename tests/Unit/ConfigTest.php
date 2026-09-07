@@ -53,12 +53,14 @@ final class ConfigTest extends TestCase
 
     public function testCustomValues(): void
     {
+        $username = $this->faker->userName();
+        $password = $this->faker->password();
         $retry = new RetryConfig(maxAttempts: 2);
 
-        $config = new Config('https://example.com', 'user', 'pass', 15.0, 5.0, $retry);
+        $config = new Config('https://example.com', $username, $password, 15.0, 5.0, $retry);
 
-        self::assertSame('user', $config->username);
-        self::assertSame('pass', $config->password);
+        self::assertSame($username, $config->username);
+        self::assertSame($password, $config->password);
         self::assertSame(15.0, $config->timeout);
         self::assertSame(5.0, $config->connectTimeout);
         self::assertSame($retry, $config->retry);
@@ -126,22 +128,26 @@ final class ConfigTest extends TestCase
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new Config('https://example.com', password: 'secret');
+        new Config('https://example.com', password: $this->faker->password());
     }
 
     public function testRejectsAuthenticatedHttpByDefault(): void
     {
         $this->expectException(InvalidArgumentException::class);
 
-        new Config('http://example.com', username: 'admin', password: 'secret');
+        new Config(
+            'http://example.com',
+            username: $this->faker->userName(),
+            password: $this->faker->password(),
+        );
     }
 
     public function testAllowsExplicitInsecureHttpForIsolatedTests(): void
     {
         $config = new Config(
             'http://wordpress.test',
-            username: 'admin',
-            password: 'secret',
+            username: $this->faker->userName(),
+            password: $this->faker->password(),
             allowInsecureHttp: true,
         );
 

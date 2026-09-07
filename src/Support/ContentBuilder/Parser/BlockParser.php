@@ -37,69 +37,109 @@ final class BlockParser
      */
     public function parse(string $content, BlockRegistry $registry): array
     {
-        $blocks = [];
-        $offset = 0;
-        $length = strlen($content);
+        return $this->parseRange($content, $registry, 0, strlen($content), $this->indexClosers($content));
+    }
 
-        while ($offset < $length) {
+    /**
+     * @param array<int, array{start: int, end: int}> $closers
+     *
+     * @return list<BlockInterface>
+     */
+    private function parseRange(
+        string $content,
+        BlockRegistry $registry,
+        int $start,
+        int $end,
+        array $closers,
+    ): array {
+        $blocks = [];
+        $offset = $start;
+
+        while ($offset < $end) {
             $headerStart = strpos($content, '<!-- wp:', $offset);
 
-            if ($headerStart === false) {
-                $this->appendText($blocks, substr($content, $offset));
+            if ($headerStart === false || $headerStart >= $end) {
+                $this->appendText($blocks, substr($content, $offset, $end - $offset));
 
                 break;
             }
 
             $this->appendText($blocks, substr($content, $offset, $headerStart - $offset));
-
-            $headerEnd = strpos($content, '-->', $headerStart);
-            if ($headerEnd === false) {
-                $this->appendText($blocks, substr($content, $headerStart));
-
-                break;
-            }
-
-            $header = substr($content, $headerStart + 8, $headerEnd - $headerStart - 8);
-            $name = strtok($header, ' ');
-            if ($name === false) {
-                $this->appendText($blocks, substr($content, $headerStart, $headerEnd + 3 - $headerStart));
-
-                $offset = $headerEnd + 3;
-
-                continue;
-            }
-
-            $selfClosing = str_ends_with($header, '/');
-            $attributesJson = trim(substr($header, strlen($name)));
-            if ($selfClosing) {
-                $attributesJson = rtrim(substr($attributesJson, 0, -1));
-            }
-            $attributes = $this->decodeAttributes($attributesJson);
-
-            if ($selfClosing) {
-                $blocks[] = $this->createBlock($name, $attributes, '', $registry);
-
-                $offset = $headerEnd + 3;
-
-                continue;
-            }
-
-            $closer = $this->findCloser($content, $name, $headerEnd + 3);
-
-            if ($closer === null) {
-                $this->appendText($blocks, substr($content, $headerStart));
+            $opening = $this->openingAt($content, $headerStart, $end);
+            if ($opening === null) {
+                $this->appendText($blocks, substr($content, $headerStart, $end - $headerStart));
 
                 break;
             }
 
-            $inner = substr($content, $headerEnd + 3, $closer - ($headerEnd + 3));
+            if ($opening['self_closing']) {
+                $blocks[] = $this->createBlock(
+                    $opening['name'],
+                    $opening['attributes'],
+                    $content,
+                    $opening['end'],
+                    $opening['end'],
+                    $registry,
+                    $closers,
+                );
 
-            $blocks[] = $this->createBlock($name, $attributes, $inner, $registry);
+                $offset = $opening['end'];
 
-            $offset = $closer + strlen("<!-- /wp:{$name} -->");
+                continue;
+            }
+
+            $closer = $closers[$headerStart] ?? null;
+
+            if ($closer === null || $closer['start'] >= $end) {
+                $this->appendText($blocks, substr($content, $headerStart, $end - $headerStart));
+
+                break;
+            }
+
+            $blocks[] = $this->createBlock(
+                $opening['name'],
+                $opening['attributes'],
+                $content,
+                $opening['end'],
+                $closer['start'],
+                $registry,
+                $closers,
+            );
+
+            $offset = $closer['end'];
         }
 
         return $blocks;
+    }
+
+    /**
+     * @return array{name: string, attributes: array<string, mixed>, end: int, self_closing: bool}|null
+     */
+    private function openingAt(string $content, int $start, int $rangeEnd): ?array
+    {
+        $headerEnd = strpos($content, '-->', $start);
+        if ($headerEnd === false || $headerEnd >= $rangeEnd) {
+            return null;
+        }
+
+        $header = substr($content, $start + 8, $headerEnd - $start - 8);
+        $name = $this->blockName($header);
+        if ($name === null) {
+            return null;
+        }
+
+        $selfClosing = str_ends_with($header, '/');
+        $attributesJson = trim(substr($header, strlen($name)));
+        if ($selfClosing) {
+            $attributesJson = rtrim(substr($attributesJson, 0, -1));
+        }
+
+        return [
+            'name' => $name,
+            'attributes' => $this->decodeAttributes($attributesJson),
+            'end' => $headerEnd + 3,
+            'self_closing' => $selfClosing,
+        ];
     }
 
     /**
@@ -114,65 +154,59 @@ final class BlockParser
         $blocks[] = new HtmlBlock($text);
     }
 
-    private function findCloser(string $content, string $name, int $offset): ?int
+    private function blockName(string $header): ?string
     {
-        $openerNeedle = sprintf('<!-- wp:%s', $name);
-        $closerNeedle = sprintf('<!-- /wp:%s -->', $name);
-        $depth = 1;
-        $cursor = $offset;
+        $nameLength = strcspn($header, " \t\r\n");
+        $name = substr($header, 0, $nameLength);
 
-        while (true) {
-            $closer = strpos($content, $closerNeedle, $cursor);
-            if ($closer === false) {
-                return null;
-            }
+        return $name === '' ? null : $name;
+    }
 
-            $opener = $this->findNextExactOpener($content, $name, $openerNeedle, $cursor);
-            if ($opener !== null && $opener['position'] < $closer) {
-                if (! $opener['self_closing']) {
-                    $depth++;
-                }
+    /**
+     * Index each matching closing comment once so nested parsing does not
+     * repeatedly rescan the same content.
+     *
+     * @return array<int, array{start: int, end: int}>
+     */
+    private function indexClosers(string $content): array
+    {
+        preg_match_all(
+            '/<!-- (\/?)wp:([^\s]+)(.*?)-->/s',
+            $content,
+            $matches,
+            PREG_SET_ORDER | PREG_OFFSET_CAPTURE,
+        );
 
-                $cursor = $opener['end'];
+        /** @var array<string, list<int>> $openers */
+        $openers = [];
+        $closers = [];
+
+        foreach ($matches as $match) {
+            $comment = $match[0][0];
+            $position = $match[0][1];
+            $closing = $match[1][0] === '/';
+            $name = $match[2][0];
+
+            if (! $closing && ! str_ends_with(substr($comment, 0, -3), '/')) {
+                $openers[$name][] = $position;
 
                 continue;
             }
 
-            $depth--;
-            if ($depth === 0) {
-                return $closer;
+            if (! $closing || ($openers[$name] ?? []) === []) {
+                continue;
             }
 
-            $cursor = $closer + strlen($closerNeedle);
-        }
-    }
-
-    /**
-     * @return array{position: int, end: int, self_closing: bool}|null
-     */
-    private function findNextExactOpener(string $content, string $name, string $needle, int $offset): ?array
-    {
-        $position = $offset;
-
-        while (($position = strpos($content, $needle, $position)) !== false) {
-            $headerEnd = strpos($content, '-->', $position);
-            if ($headerEnd === false) {
-                return null;
-            }
-
-            $header = substr($content, $position + 8, $headerEnd - $position - 8);
-            if (strtok($header, ' ') === $name) {
-                return [
-                    'position' => $position,
-                    'end' => $headerEnd + 3,
-                    'self_closing' => str_ends_with($header, '/'),
+            $opener = array_pop($openers[$name]);
+            if ($opener !== null) {
+                $closers[$opener] = [
+                    'start' => $position,
+                    'end' => $position + strlen($comment),
                 ];
             }
-
-            $position = $headerEnd + 3;
         }
 
-        return null;
+        return $closers;
     }
 
     /**
@@ -200,20 +234,36 @@ final class BlockParser
 
     /**
      * @param array<string, mixed> $attributes
+     * @param array<int, array{start: int, end: int}> $closers
      */
-    private function createBlock(string $name, array $attributes, string $inner, BlockRegistry $registry): BlockInterface
-    {
+    private function createBlock(
+        string $name,
+        array $attributes,
+        string $content,
+        int $innerStart,
+        int $innerEnd,
+        BlockRegistry $registry,
+        array $closers,
+    ): BlockInterface {
         $className = $this->resolveClass($name, $registry);
 
         if ($className === null) {
-            return new GenericBlock($name, $attributes, $inner);
+            return new GenericBlock($name, $attributes, substr($content, $innerStart, $innerEnd - $innerStart));
         }
 
         if (is_subclass_of($className, ContainerBlock::class)) {
-            return $this->createContainer($className, $attributes, $inner, $registry);
+            return $this->createContainer(
+                $className,
+                $attributes,
+                $this->parseRange($content, $registry, $innerStart, $innerEnd, $closers),
+            );
         }
 
-        return $this->createLeaf($name, $className, $attributes, $inner);
+        return $this->createLeaf(
+            $className,
+            $attributes,
+            substr($content, $innerStart, $innerEnd - $innerStart),
+        );
     }
 
     /**
@@ -233,8 +283,9 @@ final class BlockParser
     /**
      * @param class-string<BlockInterface> $className
      * @param array<string, mixed> $attributes
+     * @param list<BlockInterface> $children
      */
-    private function createContainer(string $className, array $attributes, string $inner, BlockRegistry $registry): BlockInterface
+    private function createContainer(string $className, array $attributes, array $children): BlockInterface
     {
         if ($className === Group::class) {
             $tagName = $attributes['tagName'] ?? 'div';
@@ -244,7 +295,7 @@ final class BlockParser
             $container = new $className($attributes);
         }
 
-        foreach ($this->parse($inner, $registry) as $child) {
+        foreach ($children as $child) {
             if ($child instanceof HtmlBlock && $this->isWrapperOnly($child->toHtml())) {
                 continue;
             }
@@ -270,21 +321,21 @@ final class BlockParser
      * @param class-string<BlockInterface> $className
      * @param array<string, mixed> $attributes
      */
-    private function createLeaf(string $name, string $className, array $attributes, string $inner): BlockInterface
+    private function createLeaf(string $className, array $attributes, string $inner): BlockInterface
     {
-        return match ($name) {
-            'paragraph' => new Paragraph($this->unwrapTag($inner, 'p'), $attributes),
-            'heading' => $this->createHeading($attributes, $inner),
-            'image' => $this->createImage($attributes, $inner),
-            'quote' => $this->createQuote($attributes, $inner),
-            'code' => new Code($this->unwrapCode($inner), $attributes),
-            'shortcode' => new Shortcode(trim($inner), $attributes),
-            'html' => new HtmlBlock($inner, $attributes),
-            'more' => $this->createReadMore($attributes, $inner),
-            'read-more' => new ReadMoreButton($this->anchorInnerHtml($inner), $attributes),
-            'nextpage' => new PageBreak($attributes),
-            'separator' => new Separator($attributes),
-            'button' => $this->createButton($attributes, $inner),
+        return match ($className) {
+            Paragraph::class => new Paragraph($this->unwrapTag($inner, 'p'), $attributes, escapeText: false),
+            Heading::class => $this->createHeading($attributes, $inner),
+            Image::class => $this->createImage($attributes, $inner),
+            Quote::class => $this->createQuote($attributes, $inner),
+            Code::class => new Code($this->unwrapCode($inner), $attributes),
+            Shortcode::class => new Shortcode(trim($inner), $attributes),
+            HtmlBlock::class => new HtmlBlock($inner, $attributes),
+            ReadMore::class => $this->createReadMore($attributes, $inner),
+            ReadMoreButton::class => new ReadMoreButton($this->anchorInnerHtml($inner), $attributes),
+            PageBreak::class => new PageBreak($attributes),
+            Separator::class => new Separator($attributes),
+            Button::class => $this->createButton($attributes, $inner),
             default => new $className($inner, $attributes),
         };
     }
@@ -318,6 +369,7 @@ final class BlockParser
             $this->unwrapHeading($inner, $resolvedLevel),
             $resolvedLevel,
             $attributes,
+            escapeText: false,
         );
     }
 
@@ -364,7 +416,7 @@ final class BlockParser
             $url = html_entity_decode($match[1], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         }
 
-        return new Button($this->anchorInnerHtml($inner), $url, $attributes);
+        return new Button($this->anchorInnerHtml($inner), $url, $attributes, escapeText: false);
     }
 
     /**

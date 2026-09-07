@@ -6,9 +6,8 @@ WordPress application passwords are Basic auth credentials. `create()` wires
 them automatically; nothing else is needed.
 
 For other schemes (bearer, JWT, API keys, custom middleware) build a
-`jooservices/client` client with `ClientBuilder` and pass it to the
-`WordPressService` constructor together with a `RequestBuilder`,
-`ResponseDecoder`, and `ErrorMapper`.
+`jooservices/client` client with `ClientBuilder` and pass it to
+`WordPressService::fromClient($client)`.
 
 ## Error taxonomy
 

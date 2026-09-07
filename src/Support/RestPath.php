@@ -31,11 +31,39 @@ final class RestPath
         $collapsed = preg_replace('#/+#', '/', $path) ?? '/';
 
         foreach (explode('/', $collapsed) as $segment) {
-            if ($segment === '.' || $segment === '..') {
-                throw new InvalidArgumentException('REST paths cannot contain dot segments.');
+            $decoded = $segment;
+            do {
+                $previous = $decoded;
+                $decoded = rawurldecode($decoded);
+            } while ($decoded !== $previous);
+
+            foreach (explode('/', $decoded) as $decodedSegment) {
+                if ($decodedSegment === '.' || $decodedSegment === '..') {
+                    throw new InvalidArgumentException('REST paths cannot contain dot segments.');
+                }
             }
         }
 
         return trim($collapsed, '/');
+    }
+
+    /**
+     * Collection path for a custom post type or taxonomy `rest_base`.
+     *
+     * Bare slugs (`product`) become `wp/v2/product`. Namespaced paths
+     * (`wp/v2/product`, `my-plugin/v1/items`) are kept as-is.
+     */
+    public function collection(string $restBase): string
+    {
+        $path = $this->normalize($restBase);
+        if ($path === '') {
+            throw new InvalidArgumentException('REST collection path cannot be empty.');
+        }
+
+        if (! str_contains($path, '/')) {
+            return 'wp/v2/' . $path;
+        }
+
+        return $path;
     }
 }

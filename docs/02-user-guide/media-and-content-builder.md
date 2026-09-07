@@ -21,6 +21,9 @@ $images = $wordpress->media()->list(new ListMediaQuery(mediaType: 'image', perPa
 
 `ContentBuilder` generates Gutenberg comment-delimited block markup:
 
+Text passed to `text()`, `heading()`, and `button()` is HTML-escaped by
+default. Use `html()` only for explicitly trusted raw markup.
+
 ```php
 $builder = $wordpress->contentBuilder(); // media-wired for uploads
 
@@ -52,6 +55,9 @@ register per builder via `registerBlock()` / `BlockRegistry`.
 ## PostBuilder
 
 Fluent post payload assembly, obtained from `posts()->builder()`:
+
+New posts default to `draft`. Publishing always requires an explicit
+`->status('publish')` call.
 
 ```php
 $post = $wordpress->posts()->builder()

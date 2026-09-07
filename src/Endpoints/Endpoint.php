@@ -80,7 +80,7 @@ enum Endpoint: string
 
     public function withId(int|string $id): string
     {
-        return $this->value . '/' . $id;
+        return $this->value . '/' . rawurlencode((string) $id);
     }
 
     public function withKey(string $key): string
@@ -104,6 +104,6 @@ enum Endpoint: string
      */
     public function withChild(int|string $id, string $child): string
     {
-        return $this->withId($id) . '/' . $child;
+        return $this->withId($id) . '/' . rawurlencode($child);
     }
 }

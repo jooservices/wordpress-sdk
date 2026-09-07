@@ -45,4 +45,36 @@ final class RestPathTest extends TestCase
 
         $this->restPath->normalize('//example.com/wp-json/wp/v2/posts');
     }
+
+    public function testRejectsEncodedDotSegments(): void
+    {
+        foreach ([
+            'wp/v2/%2e%2e/users',
+            'wp/v2/%252e%252e/users',
+            'wp/v2/.%2e/users',
+            'wp/v2/%2e%2e%2fusers',
+            'wp/v2/%252e%252e%252fusers',
+        ] as $path) {
+            try {
+                $this->restPath->normalize($path);
+                self::fail(sprintf('Expected encoded traversal to be rejected: %s', $path));
+            } catch (InvalidArgumentException) {
+                self::addToAssertionCount(1);
+            }
+        }
+    }
+
+    public function testCollectionPrefixesBareSlugs(): void
+    {
+        self::assertSame('wp/v2/product', $this->restPath->collection('product'));
+        self::assertSame('wp/v2/book', $this->restPath->collection('wp/v2/book'));
+        self::assertSame('my-plugin/v1/items', $this->restPath->collection('my-plugin/v1/items'));
+    }
+
+    public function testCollectionRejectsEmptyPath(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->restPath->collection('   ');
+    }
 }

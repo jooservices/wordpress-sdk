@@ -16,7 +16,8 @@ use RuntimeException;
  *
  * Create with {@see PostsService::builder()}; uploads via
  * `featuredImage()` require the posts service to be wired with a
- * `MediaService` (done automatically by the facade).
+ * `MediaService` (done automatically by the facade). New posts default to
+ * `draft`; publishing requires an explicit `status('publish')` call.
  */
 final class PostBuilder
 {
@@ -40,6 +41,8 @@ final class PostBuilder
     /**
      * Accepts rendered block markup (`render()` output), a raw string, or a
      * closure that receives a fresh `ContentBuilder` and returns it.
+     *
+     * @param ContentBuilder|(Closure(ContentBuilder): ContentBuilder)|string $content
      */
     public function content(ContentBuilder|Closure|string $content): self
     {
@@ -158,7 +161,7 @@ final class PostBuilder
     public function update(int $id, array $extra = []): Post
     {
         /** @var Post */
-        return $this->postsService->update($id, [...$this->payload(), ...$extra]);
+        return $this->postsService->update($id, [...$this->data, ...$extra]);
     }
 
     /**
@@ -175,7 +178,7 @@ final class PostBuilder
     private function payload(): array
     {
         if (! isset($this->data['status'])) {
-            return [...$this->data, 'status' => 'publish'];
+            return [...$this->data, 'status' => 'draft'];
         }
 
         return $this->data;

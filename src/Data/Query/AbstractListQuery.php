@@ -6,6 +6,9 @@ namespace JOOservices\WordPress\Sdk\Data\Query;
 
 use JOOservices\Dto\Core\Dto;
 use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
+use JOOservices\WordPress\Sdk\Enums\OrderDirection;
+use JOOservices\WordPress\Sdk\Enums\RestContext;
+use JOOservices\WordPress\Sdk\Support\MapsScalarQuery;
 
 /**
  * Base query DTO for list/read operations.
@@ -16,6 +19,8 @@ use JOOservices\WordPress\Sdk\Contracts\QueryParametersInterface;
  */
 abstract class AbstractListQuery extends Dto implements QueryParametersInterface
 {
+    use MapsScalarQuery;
+
     /**
      * @param list<int>|null $include
      * @param list<int>|null $exclude
@@ -24,13 +29,14 @@ abstract class AbstractListQuery extends Dto implements QueryParametersInterface
         public readonly ?int $page = null,
         public readonly ?int $perPage = null,
         public readonly ?string $search = null,
-        public readonly ?string $context = null,
+        public readonly RestContext|string|null $context = null,
         public readonly ?string $orderby = null,
-        public readonly ?string $order = null,
+        public readonly OrderDirection|string|null $order = null,
         public readonly ?array $include = null,
         public readonly ?array $exclude = null,
         public readonly ?string $fields = null,
         public readonly bool $embed = false,
+        public readonly ?int $offset = null,
     ) {}
 
     /**
@@ -38,19 +44,20 @@ abstract class AbstractListQuery extends Dto implements QueryParametersInterface
      */
     public function toQuery(): array
     {
-        return array_filter([
+        return $this->omitEmpty([
             'page' => $this->page,
             'per_page' => $this->perPage,
+            'offset' => $this->offset,
             'search' => $this->search,
-            'context' => $this->context,
+            'context' => $this->scalar($this->context),
             'orderby' => $this->orderby,
-            'order' => $this->order,
+            'order' => $this->scalar($this->order),
             'include' => $this->include,
             'exclude' => $this->exclude,
             '_fields' => $this->fields,
             '_embed' => $this->embed ? 'true' : null,
             ...$this->extraQuery(),
-        ], static fn(mixed $value): bool => $value !== null && $value !== []);
+        ]);
     }
 
     /**

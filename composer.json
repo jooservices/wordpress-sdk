@@ -50,6 +50,7 @@
         "ci": [
             "@lint",
             "@test:coverage",
+            "@coverage:check",
             "@security"
         ],
         "check": [

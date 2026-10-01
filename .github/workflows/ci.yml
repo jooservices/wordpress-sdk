@@ -101,6 +101,8 @@ jobs:
         run: tools/ci/docker-compose run --rm php composer install --no-interaction --prefer-dist
       - name: Run unit tests and enforce coverage
         run: tools/ci/docker-compose run --rm php composer test:coverage
+      - name: Check coverage threshold
+        run: tools/ci/docker-compose run --rm php composer coverage:check
       - name: Upload coverage artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:

@@ -50,6 +50,7 @@
         "ci": [
             "@lint",
             "@test:coverage",
+            "@coverage:check",
             "@security"
         ],
         "check": [
@@ -76,10 +77,9 @@
         "test": "phpunit --testsuite=Unit",
         "test:integration": "phpunit --testsuite=Integration",
         "test:coverage": [
-            "phpunit --testsuite=Unit --coverage-html=coverage --coverage-clover=coverage.xml",
-            "@coverage:gate"
+            "phpunit --testsuite=Unit --coverage-html=coverage --coverage-clover=coverage.xml"
         ],
-        "coverage:gate": "php tools/test-coverage-gate.php",
+        "coverage:check": "php tools/test-coverage-gate.php",
         "security": "composer audit --locked",
         "hooks:install": "captainhook install --force --skip-existing"
     },

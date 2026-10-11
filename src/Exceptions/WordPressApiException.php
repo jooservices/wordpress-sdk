@@ -193,7 +193,7 @@ class WordPressApiException extends AbstractJOORuntimeException implements
     private static function sanitizeUrlCredentials(string $value): string
     {
         $withoutUserInfo = preg_replace(
-            '~\b([a-z][a-z0-9+.-]*://)[^/\s?#@]*@~i',
+            '~\b([a-z][a-z0-9+.-]*://)[^/\s?#]*@~i',
             '$1(redacted)@',
             $value,
         ) ?? $value;

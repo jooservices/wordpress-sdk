@@ -348,6 +348,23 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertStringNotContainsString('review-sentinel', $structuredMessage);
     }
 
+    public function testUrlRedactionMasksAtSignPassword(): void
+    {
+        $username = $this->faker->userName();
+        $password = $this->faker->lexify('????') . '@' . $this->faker->lexify('????');
+        $message = sprintf(
+            'Request failed: https://%s:%s@example.test/private',
+            $username,
+            $password,
+        );
+        $exception = new WordPressApiException($message);
+        $structuredMessage = $exception->toArray()['message'] ?? null;
+
+        self::assertIsString($structuredMessage);
+        self::assertSame('Request failed: https://(redacted)@example.test/private', $structuredMessage);
+        self::assertStringNotContainsString($password, $structuredMessage);
+    }
+
     public function testContextRedactsWpSecretsKeepsRedactor(): void
     {
         $previousRedactor = AbstractContextAwareException::getRedactor();

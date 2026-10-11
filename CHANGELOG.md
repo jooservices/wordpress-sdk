@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [4.2.0] - 2026-10-11
 
 ### Changed
 
@@ -166,6 +166,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `FontsService::uploadFace()`.
 - Render multi-paragraph quotes as separate `<p>` elements.
 
-[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.1.0...HEAD
+[Unreleased]: https://github.com/jooservices/wordpress-sdk/compare/v4.2.0...HEAD
+[4.2.0]: https://github.com/jooservices/wordpress-sdk/compare/v4.1.0...v4.2.0
 [4.1.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.1.0
 [4.0.0]: https://github.com/jooservices/wordpress-sdk/releases/tag/v4.0.0

@@ -25,7 +25,7 @@
 
 | Check | Result |
 | --- | --- |
-| `composer ci` in PHP 8.5.11 container | PASS: all lint stages; 341 tests / 1,125 assertions; 93.89% coverage (1,598/1,702 statements, above the 90% gate); Composer audit reported no advisories. |
+| `make ci` (`composer ci`) in PHP 8.5.11 container | PASS: all lint stages; 342 tests / 1,128 assertions; 93.89% coverage (1,598/1,702 statements, above the 90% gate); Composer audit reported no advisories. |
 | `composer validate --strict` | PASS. |
 | `composer outdated --all --locked --format=json` | PASS: all 88 locked runtime, dev, and transitive packages are current; no newer versions reported. |
 | Disposable WordPress E2E via `make integration` | PASS: 4 tests / 84 assertions. Stack and volumes were cleaned after the run. |
@@ -34,9 +34,14 @@
 | `make clean-consumer` | PASS: consumer installation resolved `jooservices/client v4.5.0` and the SDK smoke check passed. |
 | `make build` | PASS: built the PHP 8.5.11 / Composer 2.10.3 tooling image. The integration runner now rebuilds its PHP service before running tests. |
 | Actionlint 1.7.12 | PASS: all GitHub workflows parsed. |
-| Gitleaks 8.30.1 | PASS: 54 commits scanned, no leaks found. |
+| Gitleaks 8.30.1 | PASS: 58 commits scanned on implementation revision `9001b8e`; no leaks found. The scan count follows the exact checked-out history snapshot. |
 | Semgrep 1.179.0 (`p/php`) | PASS: 23 rules, 136 PHP files, 0 findings. |
 | `sh -n tools/integration` and `git diff --check` | PASS. |
+
+The disposable integration run reports one more assertion than the retained
+sample run (84 vs. 83). In `testContentBuilderPostRoundTrip()`, the disposable
+run verifies the temporary post is deleted; review mode intentionally keeps
+the published post and skips that cleanup assertion.
 
 ## Dedicated WordPress review post
 

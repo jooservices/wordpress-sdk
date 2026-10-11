@@ -13,7 +13,7 @@
 PHP 8.5 SDK with typed DTOs for stable WordPress REST resources and documented
 raw-array access for dynamic admin/editor schemas.
 
-Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
+Package: `jooservices/wordpress-sdk` · v4.2.0 (ground-up rebuild)
 
 > [!WARNING]
 > **`v4.0.0` is a complete rebuild and is not backward compatible with archived `v1.x`.** See [About v4.0.0](#about-v400) and [UPGRADE-4.0.md](UPGRADE-4.0.md).
@@ -22,7 +22,7 @@ Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 
 | | |
 | --- | --- |
-| Status | **`v4.1.0` — current release** |
+| Status | **`v4.2.0` — current release** |
 | First public line | `v4.0.0` |
 | Runtime | PHP `^8.5`, `jooservices/client ^4.5`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
 

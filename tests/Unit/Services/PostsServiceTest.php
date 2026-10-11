@@ -21,7 +21,7 @@ final class PostsServiceTest extends TestCase
         $this->wordPress = $this->wordPress();
     }
 
-    public function testListReturnsTypedCollectionWithPaginationHeaders(): void
+    public function testListReturnsTypedPaginatedCollection(): void
     {
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [
@@ -59,7 +59,7 @@ final class PostsServiceTest extends TestCase
         $this->assertQuery($this->lastRequest(), ['context' => 'edit']);
     }
 
-    public function testListPreservesEmbeddedDataWhenRequested(): void
+    public function testListPreservesEmbeddedData(): void
     {
         $authorName = $this->faker->name();
         $embedded = ['author' => [['id' => $this->faker->numberBetween(1), 'name' => $authorName]]];

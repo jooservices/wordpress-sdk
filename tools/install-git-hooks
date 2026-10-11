@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+tools/ci/docker-compose run --rm --no-deps php vendor/bin/captainhook install --force --skip-existing
+
+hooks_path="$(git rev-parse --git-path hooks)"
+temporary_hook=''
+
+cleanup() {
+    if [ -n "${temporary_hook}" ]; then
+        rm -f "${temporary_hook}"
+    fi
+}
+
+trap cleanup EXIT
+
+for hook in "${hooks_path}"/*; do
+    if [ -f "$hook" ] && grep -q 'vendor/bin/captainhook' "$hook" 2>/dev/null; then
+        temporary_hook="$(mktemp "${hook}.XXXXXX")"
+        sed 's|vendor/bin/captainhook|tools/run-captainhook|g' "$hook" > "${temporary_hook}"
+        chmod 755 "${temporary_hook}"
+        mv "${temporary_hook}" "$hook"
+        temporary_hook=''
+    fi
+done
+
+echo 'Git hooks installed through Docker: tools/run-captainhook'

@@ -67,7 +67,7 @@ final class ErrorMapperTest extends TestCase
         self::assertNotSame('', $exception->getMessage());
     }
 
-    public function testInvalidParamBadRequestBecomesValidationException(): void
+    public function testInvalidParamMapsToValidation(): void
     {
         $message = $this->faker->sentence();
         $parameterMessage = $this->faker->sentence();
@@ -122,7 +122,7 @@ final class ErrorMapperTest extends TestCase
         self::assertSame([], $exception->params);
     }
 
-    public function testValidationWithEmptyBodyUsesDefaultPayload(): void
+    public function testEmptyValidationUsesDefaultPayload(): void
     {
         $exception = $this->mapper->map(TestResponse::make(422, [], '{}'));
 

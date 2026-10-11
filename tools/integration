@@ -5,17 +5,130 @@ set -eu
 export DOCKER_UID="${DOCKER_UID:-$(id -u)}"
 export DOCKER_GID="${DOCKER_GID:-$(id -g)}"
 
-integration_project='wordpress-sdk-integration'
-integration_compose="docker compose --project-name ${integration_project} --file docker-compose.integration.yml"
+review_sample="${WORDPRESS_RETAIN_REVIEW_SAMPLE:-0}"
+vendor_dir="${WORDPRESS_SDK_VENDOR_DIR:-}"
 
-cleanup() {
-    ${integration_compose} down --volumes --remove-orphans
+if [ -n "${vendor_dir}" ]; then
+    case "${vendor_dir}" in
+        /*) ;;
+        *)
+            printf 'WORDPRESS_SDK_VENDOR_DIR must be an absolute path.\n' >&2
+            exit 2
+            ;;
+    esac
+
+    if [ ! -d "${vendor_dir}" ]; then
+        printf 'WORDPRESS_SDK_VENDOR_DIR must point to an existing directory.\n' >&2
+        exit 2
+    fi
+fi
+
+case "${review_sample}" in
+    0)
+        export WORDPRESS_RETAIN_REVIEW_SAMPLE=0
+        integration_project='wordpress-sdk-integration'
+        ;;
+    1)
+        review_port="${WORDPRESS_REVIEW_PORT:-8080}"
+        review_project="${WORDPRESS_REVIEW_PROJECT:-wordpress-sdk-integration-review}"
+
+        case "${review_port}" in
+            ''|*[!0-9]*)
+                printf 'WORDPRESS_REVIEW_PORT must contain only digits.\n' >&2
+                exit 2
+                ;;
+        esac
+
+        review_port_number="${review_port}"
+
+        while [ "${review_port_number#0}" != "${review_port_number}" ]; do
+            review_port_number="${review_port_number#0}"
+        done
+
+        review_port_number="${review_port_number:-0}"
+
+        if [ "${#review_port_number}" -gt 5 ] \
+            || [ "${review_port_number}" -lt 1 ] \
+            || [ "${review_port_number}" -gt 65535 ]; then
+            printf 'WORDPRESS_REVIEW_PORT must be between 1 and 65535.\n' >&2
+            exit 2
+        fi
+
+        review_port="${review_port_number}"
+
+        export WORDPRESS_RETAIN_REVIEW_SAMPLE=1
+        export WORDPRESS_REVIEW_PORT="${review_port}"
+        export WORDPRESS_REVIEW_BASE_URL="http://127.0.0.1:${review_port}"
+
+        case "${review_project}" in
+            [a-z0-9]*) ;;
+            *)
+                printf 'WORDPRESS_REVIEW_PROJECT must start with a lowercase letter or digit.\n' >&2
+                exit 2
+                ;;
+        esac
+
+        case "${review_project}" in
+            *[!a-z0-9_-]*)
+                printf 'WORDPRESS_REVIEW_PROJECT may contain only lowercase letters, digits, underscores, and hyphens.\n' >&2
+                exit 2
+                ;;
+        esac
+
+        export WORDPRESS_REVIEW_PROJECT="${review_project}"
+        integration_project="${review_project}"
+        ;;
+    *)
+        printf 'WORDPRESS_RETAIN_REVIEW_SAMPLE must be 0 or 1.\n' >&2
+        exit 2
+        ;;
+esac
+
+integration_compose() {
+    if [ "${review_sample}" = '1' ]; then
+        docker compose \
+            --project-name "${integration_project}" \
+            --file docker-compose.integration.yml \
+            --file docker-compose.integration-review.yml \
+            "$@"
+    else
+        docker compose \
+            --project-name "${integration_project}" \
+            --file docker-compose.integration.yml \
+            "$@"
+    fi
 }
 
-trap cleanup EXIT INT TERM
+cleanup() {
+    integration_status=$?
+    trap - 0 HUP INT TERM
 
-${integration_compose} up --detach --build db wordpress
-${integration_compose} run --rm wpcli wp core install \
+    if [ "${review_sample}" != '1' ] || [ "${integration_status}" -ne 0 ]; then
+        cleanup_status=0
+        integration_compose down --volumes --remove-orphans || cleanup_status=$?
+
+        if [ "${integration_status}" -eq 0 ]; then
+            integration_status="${cleanup_status}"
+        fi
+    else
+        printf 'Retained review WordPress stack at %s. Run make integration-review-cleanup when finished.\n' \
+            "${WORDPRESS_REVIEW_BASE_URL}"
+    fi
+
+    exit "${integration_status}"
+}
+
+trap cleanup 0
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [ "${review_sample}" = '1' ]; then
+    integration_compose down --volumes --remove-orphans
+fi
+
+integration_compose up --detach --build db wordpress
+integration_compose run --rm wpcli wp core install \
     --url=http://wordpress \
     --title='WordPress SDK Integration' \
     --admin_user=admin \
@@ -24,10 +137,26 @@ ${integration_compose} run --rm wpcli wp core install \
     --skip-email \
     --allow-root
 
-integration_password="$(${integration_compose} run --rm wpcli wp user application-password create admin wordpress-sdk --porcelain --allow-root)"
+if [ "${review_sample}" = '1' ]; then
+    integration_compose run --rm wpcli wp option update home "${WORDPRESS_REVIEW_BASE_URL}" --allow-root
+fi
 
-${integration_compose} run --rm \
+integration_password="$(integration_compose run --rm wpcli wp user application-password create admin wordpress-sdk --porcelain --allow-root)"
+
+set -- \
     --env WORDPRESS_URL=http://wordpress \
     --env WORDPRESS_USER=admin \
     --env WORDPRESS_APP_PASSWORD="${integration_password}" \
-    php composer test:integration
+    --env WORDPRESS_RETAIN_REVIEW_SAMPLE="${WORDPRESS_RETAIN_REVIEW_SAMPLE}"
+
+if [ "${review_sample}" = '1' ]; then
+    set -- "$@" \
+        --env "WORDPRESS_REVIEW_BASE_URL=${WORDPRESS_REVIEW_BASE_URL}" \
+        --env "WORDPRESS_REVIEW_PORT=${WORDPRESS_REVIEW_PORT}"
+fi
+
+if [ -n "${vendor_dir}" ]; then
+    set -- "$@" --volume "${vendor_dir}:/app/vendor:ro"
+fi
+
+integration_compose run --build --rm "$@" php composer test:integration -- --cache-directory=/tmp/phpunit-cache

@@ -1,17 +1,19 @@
 # jooservices/wordpress-sdk
 
 [![CI](https://github.com/jooservices/wordpress-sdk/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/jooservices/wordpress-sdk/actions/workflows/ci.yml)
-[![codecov](https://codecov.io/gh/jooservices/wordpress-sdk/graph/badge.svg)](https://codecov.io/gh/jooservices/wordpress-sdk)
-[![Quality gate status](https://sonarcloud.io/api/project_badges/measure?project=jooservices_wordpress-sdk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jooservices_wordpress-sdk)
+[![Coverage (develop)](https://codecov.io/gh/jooservices/wordpress-sdk/branch/develop/graph/badge.svg)](https://codecov.io/gh/jooservices/wordpress-sdk/branch/develop)
+[![Quality Gate (master)](https://sonarcloud.io/api/project_badges/measure?project=jooservices_wordpress-sdk&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=jooservices_wordpress-sdk)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/jooservices/wordpress-sdk/badge)](https://securityscorecards.dev/viewer/?uri=github.com/jooservices/wordpress-sdk)
 [![PHP Version](https://img.shields.io/badge/PHP-8.5%2B-blue.svg)](https://www.php.net/)
-[![Release](https://img.shields.io/badge/version-4.1.0-blue.svg)](CHANGELOG.md)
+[![GitHub Release](https://img.shields.io/github/v/release/jooservices/wordpress-sdk?display_name=tag)](https://github.com/jooservices/wordpress-sdk/releases)
+[![Packagist Version](https://img.shields.io/packagist/v/jooservices/wordpress-sdk)](https://packagist.org/packages/jooservices/wordpress-sdk)
+[![Total Downloads](https://img.shields.io/packagist/dt/jooservices/wordpress-sdk)](https://packagist.org/packages/jooservices/wordpress-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 PHP 8.5 SDK with typed DTOs for stable WordPress REST resources and documented
 raw-array access for dynamic admin/editor schemas.
 
-Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
+Package: `jooservices/wordpress-sdk` · v4.2.0 (ground-up rebuild)
 
 > [!WARNING]
 > **`v4.0.0` is a complete rebuild and is not backward compatible with archived `v1.x`.** See [About v4.0.0](#about-v400) and [UPGRADE-4.0.md](UPGRADE-4.0.md).
@@ -20,9 +22,9 @@ Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 
 | | |
 | --- | --- |
-| Status | **`v4.1.0` — current release** |
+| Status | **`v4.2.0` — current release** |
 | First public line | `v4.0.0` |
-| Runtime | PHP `^8.5`, `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
+| Runtime | PHP `^8.5`, `jooservices/client ^4.5`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
 
 ## Features
 
@@ -35,7 +37,7 @@ Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 ## Requirements
 
 - PHP `^8.5`
-- `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0`
+- `jooservices/client ^4.5`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0`
 
 ## Installation
 
@@ -100,12 +102,23 @@ make lint-fix
 make test
 make test-coverage
 make integration
+make integration-review-sample
+make integration-review-cleanup
 make ci
 ```
 
-Unit tests use `jooservices/client` HTTP fakes (266 tests, 92.32% statements).
-`make integration` provisions disposable WordPress 7.1, MariaDB, and WP-CLI
-(3 live tests), then tears them down.
+Unit tests use `jooservices/client` HTTP fakes (341 tests, 93.89% statements).
+`make integration` provisions disposable WordPress 7.1.3, MariaDB, and WP-CLI
+(4 live tests), then tears them down. `make integration-review-sample` runs the
+same suite and keeps a dedicated ContentBuilder sample post available at
+`http://127.0.0.1:8080`. To preserve an existing review stack, choose another
+project name and port, for example:
+`WORDPRESS_REVIEW_PROJECT=wordpress-sdk-review-420 WORDPRESS_REVIEW_PORT=8081 make integration-review-sample`.
+Set `WORDPRESS_SDK_VENDOR_DIR` to an absolute vendor directory when the test
+run must use an isolated Composer install.
+Run `make integration-review-cleanup` for the default review stack after
+review. Remove an alternate stack with
+`docker compose --project-name <project> --file docker-compose.integration.yml --file docker-compose.integration-review.yml down --volumes`.
 
 ## Community
 

@@ -90,6 +90,65 @@ final class ContentBuilderTest extends TestCase
         );
     }
 
+    public function testQuotePreservesRawCitation(): void
+    {
+        $content = '<script>alert("quote")</script> & text';
+        $citation = '<em>Author & Co.</em>';
+        $builder = (new ContentBuilder())->quote($content, $citation);
+
+        self::assertSame(
+            '<!-- wp:quote -->' . "\n"
+            . '<blockquote class="wp-block-quote"><p>' . $content . '</p>'
+            . '<cite>' . $citation . '</cite></blockquote>' . "\n"
+            . '<!-- /wp:quote -->',
+            $builder->render(),
+        );
+    }
+
+    public function testQuoteEscapesRawContentWhenEnabled(): void
+    {
+        $content = '<script>alert("quote")</script> & text';
+        $citation = '<em>Author & Co.</em>';
+        $builder = (new ContentBuilder())->quote($content, $citation, [], escapeHtml: true);
+
+        self::assertSame(
+            '<!-- wp:quote -->' . "\n"
+            . '<blockquote class="wp-block-quote"><p>&lt;script&gt;alert(&quot;quote&quot;)&lt;/script&gt; &amp; text</p>'
+            . '<cite>&lt;em&gt;Author &amp; Co.&lt;/em&gt;</cite></blockquote>' . "\n"
+            . '<!-- /wp:quote -->',
+            $builder->render(),
+        );
+    }
+
+    public function testQuoteAllowsRawContent(): void
+    {
+        $content = '<strong>Trusted</strong> & <i>markup</i>';
+        $citation = '<a href="https://example.test">Source</a>';
+        $builder = (new ContentBuilder())->quote($content, $citation, [], escapeHtml: false);
+
+        self::assertSame(
+            '<!-- wp:quote -->' . "\n"
+            . '<blockquote class="wp-block-quote"><p>' . $content . '</p><cite>' . $citation . '</cite></blockquote>' . "\n"
+            . '<!-- /wp:quote -->',
+            $builder->render(),
+        );
+    }
+
+    public function testQuoteParsingRoundTripsCitation(): void
+    {
+        $content = '<strong>' . $this->faker->word() . '</strong> & ' . $this->faker->sentence();
+        $citation = '<em>' . $this->faker->name() . '</em> & ' . $this->faker->word();
+        $escapedSource = (new ContentBuilder())->quote($content, $citation, [], escapeHtml: true)->render();
+
+        self::assertSame($escapedSource, ContentBuilder::parse($escapedSource)->render());
+
+        $rawContent = '<strong>' . $this->faker->word() . '</strong> & ' . $this->faker->sentence();
+        $rawCitation = '<a href="' . $this->faker->url() . '">' . $this->faker->word() . '</a>';
+        $rawSource = (new ContentBuilder())->quote($rawContent, $rawCitation, [], escapeHtml: false)->render();
+
+        self::assertSame($rawSource, ContentBuilder::parse($rawSource)->render());
+    }
+
     public function testColumnsAndGroup(): void
     {
         $left = $this->faker->word();
@@ -119,7 +178,7 @@ final class ContentBuilderTest extends TestCase
         self::assertStringContainsString('<!-- wp:button -->', $rendered);
     }
 
-    public function testButtonsHelperAcceptsArraysAndInstances(): void
+    public function testButtonsHelperAcceptsBothInputs(): void
     {
         $firstText = $this->faker->word();
         $firstUrl = $this->faker->url();
@@ -213,7 +272,7 @@ final class ContentBuilderTest extends TestCase
         self::assertCount(1, $parsed->getBlocks());
     }
 
-    public function testRegisterBlockRegistersOnBuilderRegistry(): void
+    public function testRegistersBlockOnBuilder(): void
     {
         $builder = new ContentBuilder();
         $builder->registerBlock('my-plugin/custom', CustomTestBlock::class);
@@ -222,7 +281,7 @@ final class ContentBuilderTest extends TestCase
         self::assertSame(CustomTestBlock::class, $builder->registry()->get('my-plugin/custom'));
     }
 
-    public function testMediaServiceIsPropagatedToInnerBuilders(): void
+    public function testMediaServiceReachesInnerBuilders(): void
     {
         $wordPress = $this->wordPress();
 

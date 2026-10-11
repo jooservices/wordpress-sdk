@@ -120,10 +120,11 @@ final class ContentBuilder
 
     /**
      * @param array<string, mixed> $attributes
+     * @param bool $escapeHtml Escape content and citation when explicitly enabled.
      */
-    public function quote(string $content, string $citation = '', array $attributes = []): self
+    public function quote(string $content, string $citation = '', array $attributes = [], bool $escapeHtml = false): self
     {
-        return $this->addBlock(new Quote($content, $citation, $attributes));
+        return $this->addBlock(new Quote($content, $citation, $attributes, $escapeHtml));
     }
 
     /**

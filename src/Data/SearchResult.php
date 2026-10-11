@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace JOOservices\WordPress\Sdk\Data;
 
 use JOOservices\Dto\Core\Dto;
+use Override;
 
 /**
  * WordPress search result (`/wp/v2/search`).
@@ -29,7 +30,7 @@ final class SearchResult extends Dto
      * @param array<string, mixed> $data
      * @return array<string, mixed>
      */
-    #[\Override]
+    #[Override]
     protected static function transformInput(array $data): array
     {
         $id = $data['id'] ?? null;

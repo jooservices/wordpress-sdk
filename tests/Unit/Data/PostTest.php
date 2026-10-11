@@ -85,7 +85,7 @@ final class PostTest extends TestCase
         self::assertTrue($array['sticky']);
     }
 
-    public function testHydratesFromWordPressPayloadIncludingEditFields(): void
+    public function testHydratesWordPressEditFields(): void
     {
         $post = Post::from([
             'id' => '42',

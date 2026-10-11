@@ -61,7 +61,7 @@ final class ResponseDecoderTest extends TestCase
         $this->decoder->decodeItem($response, Post::class);
     }
 
-    public function testDecodeFailureLogsOnlyNonSensitiveMetadata(): void
+    public function testDecodeFailureLogsSafeMetadata(): void
     {
         $logger = new class extends AbstractLogger {
             /** @var list<array{level: mixed, message: string, context: array<string, mixed>}> */
@@ -117,7 +117,7 @@ final class ResponseDecoderTest extends TestCase
         self::assertSame($firstTitle, $collection->all()[0]->title?->rendered);
     }
 
-    public function testDecodeListWithoutHeadersFallsBackToItemCount(): void
+    public function testDecodeListFallsBackToCount(): void
     {
         $response = TestResponse::make(200, [], json_encode([
             ['id' => 1, 'title' => ['rendered' => $this->faker->sentence(2)]],
@@ -199,7 +199,7 @@ final class ResponseDecoderTest extends TestCase
         self::assertSame('', $post->slug);
     }
 
-    public function testDeserializeFailureWrapsAsServerException(): void
+    public function testDeserializeFailureWrapsError(): void
     {
         $this->expectException(ServerException::class);
 

@@ -214,7 +214,7 @@ final class PostBuilderTest extends TestCase
         ]);
     }
 
-    public function testUpdateWithoutStatusDoesNotChangePublicationState(): void
+    public function testUpdateWithoutStatusKeepsState(): void
     {
         $title = $this->faker->sentence(2);
         $sequence = new TestResponseSequence();

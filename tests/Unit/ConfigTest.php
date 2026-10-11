@@ -18,7 +18,14 @@ final class ConfigTest extends TestCase
         self::assertSame('https://example.com/wp-json/', $config->baseUrl);
     }
 
-    public function testKeepsExistingRestRootAndAddsTrailingSlash(): void
+    public function testNormalizesUppercaseHttpsScheme(): void
+    {
+        $config = new Config('HTTPS://example.com');
+
+        self::assertSame('https://example.com/wp-json/', $config->baseUrl);
+    }
+
+    public function testRestRootAddsTrailingSlash(): void
     {
         $config = new Config('https://example.com/wp-json');
 
@@ -73,6 +80,23 @@ final class ConfigTest extends TestCase
         new Config('not a url');
     }
 
+    public function testInvalidUrlExceptionHidesCredentials(): void
+    {
+        $username = $this->faker->userName();
+        $password = $this->faker->password();
+        $url = sprintf('https://%s:%s@invalid host', $username, $password);
+
+        try {
+            new Config($url);
+            self::fail('Expected an InvalidArgumentException for the malformed URL.');
+        } catch (InvalidArgumentException $exception) {
+            self::assertSame('Invalid base URL.', $exception->getMessage());
+            self::assertStringNotContainsString($username, $exception->getMessage());
+            self::assertStringNotContainsString($password, $exception->getMessage());
+            self::assertStringNotContainsString($url, $exception->getMessage());
+        }
+    }
+
     public function testRejectsEmptyBaseUrl(): void
     {
         $this->expectException(InvalidArgumentException::class);
@@ -108,7 +132,7 @@ final class ConfigTest extends TestCase
         new Config('https://example.com', connectTimeout: 0.0);
     }
 
-    public function testRejectsUrlQueryFragmentAndEmbeddedCredentials(): void
+    public function testRejectsQueryFragmentAndCredentials(): void
     {
         foreach ([
             'https://example.com?rest_route=/wp/v2/posts',
@@ -142,7 +166,7 @@ final class ConfigTest extends TestCase
         );
     }
 
-    public function testAllowsExplicitInsecureHttpForIsolatedTests(): void
+    public function testAllowsInsecureHttpInTests(): void
     {
         $config = new Config(
             'http://wordpress.test',

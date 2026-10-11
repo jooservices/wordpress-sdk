@@ -11,6 +11,7 @@ use JOOservices\WordPress\Sdk\Data\Term;
 use JOOservices\WordPress\Sdk\Http\ErrorMapper;
 use JOOservices\WordPress\Sdk\Pagination\PaginatedCollection;
 use InvalidArgumentException;
+use Override;
 use Psr\Http\Client\ClientInterface;
 
 /**
@@ -40,7 +41,7 @@ final class TermsService extends AbstractCrudService
      *
      * @return PaginatedCollection<Term>
      */
-    #[\Override]
+    #[Override]
     public function list(array|QueryParametersInterface|null $params = null): PaginatedCollection
     {
         $query = $this->normalizeQueryParameters($params);
@@ -57,7 +58,7 @@ final class TermsService extends AbstractCrudService
      *
      * @return Term
      */
-    #[\Override]
+    #[Override]
     public function delete(int $id, bool $force = true): object
     {
         if (! $force) {

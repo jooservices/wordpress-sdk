@@ -67,7 +67,7 @@ final class WordPressServiceTest extends TestCase
         self::assertSame($wordPress->terms($taxonomy), $wordPress->terms($taxonomy));
     }
 
-    public function testEveryAccessorReturnsItsDeclaredServiceType(): void
+    public function testAccessorsReturnServiceTypes(): void
     {
         $wordPress = $this->wordPress();
 
@@ -91,7 +91,7 @@ final class WordPressServiceTest extends TestCase
         }
     }
 
-    public function testPostsServiceReceivesMediaServiceForBuilder(): void
+    public function testPostsBuilderReceivesMedia(): void
     {
         $wordPress = $this->wordPress();
 
@@ -102,7 +102,7 @@ final class WordPressServiceTest extends TestCase
         self::assertSame($wordPress->media(), $mediaService);
     }
 
-    public function testDirectPostsServiceConstructionProvidesMediaToBuilder(): void
+    public function testDirectPostsBuilderGetsMedia(): void
     {
         $wordPress = $this->wordPress();
         $client = (new ReflectionProperty($wordPress, 'client'))->getValue($wordPress);
@@ -121,7 +121,7 @@ final class WordPressServiceTest extends TestCase
         self::assertInstanceOf(MediaService::class, $mediaService);
     }
 
-    public function testContentBuilderIsWiredWithMediaService(): void
+    public function testContentBuilderGetsMediaService(): void
     {
         $wordPress = $this->wordPress();
 

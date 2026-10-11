@@ -31,12 +31,13 @@ integration:
 	WORDPRESS_RETAIN_REVIEW_SAMPLE=0 tools/integration
 
 WORDPRESS_REVIEW_PORT ?= 8080
+WORDPRESS_REVIEW_PROJECT ?= wordpress-sdk-integration-review
 
 integration-review-sample:
-	WORDPRESS_RETAIN_REVIEW_SAMPLE=1 WORDPRESS_REVIEW_PORT=$(WORDPRESS_REVIEW_PORT) tools/integration
+	WORDPRESS_RETAIN_REVIEW_SAMPLE=1 WORDPRESS_REVIEW_PORT=$(WORDPRESS_REVIEW_PORT) WORDPRESS_REVIEW_PROJECT=$(WORDPRESS_REVIEW_PROJECT) tools/integration
 
 integration-review-cleanup:
-	docker compose --project-name wordpress-sdk-integration-review --file docker-compose.integration.yml --file docker-compose.integration-review.yml down --volumes --remove-orphans
+	docker compose --project-name $(WORDPRESS_REVIEW_PROJECT) --file docker-compose.integration.yml --file docker-compose.integration-review.yml down --volumes --remove-orphans
 
 clean-consumer:
 	tools/test-clean-consumer

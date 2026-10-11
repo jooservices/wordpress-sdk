@@ -60,9 +60,7 @@ are healthy on port 8081.
 Keep the port-8081 stack running for review. After review, remove it with:
 
 ```bash
-docker compose --project-name wordpress-sdk-integration-review-420 \
-  --file docker-compose.integration.yml \
-  --file docker-compose.integration-review.yml down --volumes
+WORDPRESS_REVIEW_PROJECT=wordpress-sdk-integration-review-420 make integration-review-cleanup
 ```
 
 ## Remaining release gates

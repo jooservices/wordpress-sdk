@@ -301,7 +301,7 @@ final class WordPressApiExceptionTest extends TestCase
     public function testDefaultContextRedactsUrlCredentials(): void
     {
         $url = 'https://user:review-sentinel@example.test/?token=review-sentinel';
-        $message = sprintf('%s %s', $this->faker->sentence(), $url);
+        $message = sprintf('%s %s', $this->faker->lexify('???? ???? ????.'), $url);
         $safeMessage = str_replace(
             $url,
             'https://(redacted)@example.test/?token=(redacted)',

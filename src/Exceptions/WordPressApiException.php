@@ -230,7 +230,7 @@ class WordPressApiException extends AbstractJOORuntimeException implements
             return true;
         }
 
-        return preg_match('/[A-Za-z0-9]{4}\s+[A-Za-z0-9]{4}\s+[A-Za-z0-9]{4}/', $value) === 1;
+        return preg_match('/\A(?:[A-Za-z0-9]{4}\s+){3,5}[A-Za-z0-9]{4}\z/', $value) === 1;
     }
 
     /**

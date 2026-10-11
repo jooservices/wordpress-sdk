@@ -21,7 +21,7 @@ final class SettingsTest extends TestCase
         self::assertNull($settings->get('missing'));
     }
 
-    public function testPreservesArrayValuedSettingNamedValues(): void
+    public function testPreservesArraySettingValues(): void
     {
         $title = $this->faker->sentence(2);
         $settings = Settings::from(['values' => ['title' => $title]]);

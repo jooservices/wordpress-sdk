@@ -11,7 +11,7 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class PostBackedResourcesTest extends TestCase
 {
-    public function testChildPathUsesEndpointAndEncodesParentId(): void
+    public function testChildPathEncodesParentId(): void
     {
         self::assertSame(
             'wp/v2/templates/theme%2Findex/revisions',

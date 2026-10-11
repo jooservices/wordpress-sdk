@@ -37,7 +37,7 @@ final class ClientFactoryTest extends TestCase
         self::assertSame('', $this->lastRequest()->getHeaderLine('Authorization'));
     }
 
-    public function testSendsAcceptHeaderAndResolvesRelativePaths(): void
+    public function testSendsAcceptAndResolvesRelativePaths(): void
     {
         $client = (new ClientFactory())->create(new Config('https://example.com'));
 

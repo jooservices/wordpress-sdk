@@ -21,8 +21,17 @@ $images = $wordpress->media()->list(new ListMediaQuery(mediaType: 'image', perPa
 
 `ContentBuilder` generates Gutenberg comment-delimited block markup:
 
-Text passed to `text()`, `heading()`, and `button()` is HTML-escaped by
-default. Use `html()` only for explicitly trusted raw markup.
+Text passed to `text()`, `heading()`, and `button()` is HTML-escaped by default.
+Quote preserves its existing raw HTML behavior for compatibility. Set
+`escapeHtml: true` to escape both its content and citation. Escape or sanitize
+untrusted quote input before rendering:
+
+```php
+$builder->quote('<strong>Quote</strong>', '<em>Source</em>', escapeHtml: true);
+```
+
+Button links reject the `javascript:`, `data:`, and `vbscript:` schemes because
+they render inside an HTML `href`.
 
 ```php
 $builder = $wordpress->contentBuilder(); // media-wired for uploads

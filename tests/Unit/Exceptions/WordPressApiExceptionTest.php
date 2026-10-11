@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace JOOservices\WordPress\Sdk\Tests\Unit\Exceptions;
 
+use JOOservices\Exceptions\Base\AbstractContextAwareException;
 use JOOservices\Exceptions\Contracts\JOOExceptionInterface;
+use JOOservices\Exceptions\Contracts\ContextRedactorInterface;
+use JOOservices\Exceptions\Support\ExceptionContext;
 use JOOservices\WordPress\Sdk\Exceptions\BadRequestException;
 use JOOservices\WordPress\Sdk\Exceptions\ConflictException;
 use JOOservices\WordPress\Sdk\Exceptions\ForbiddenException;
@@ -34,7 +37,7 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertContains(JOOExceptionInterface::class, class_implements($exception) ?: []);
     }
 
-    public function testSubclassesShareTheBaseExceptionAndErrorCodes(): void
+    public function testSubclassesShareBaseErrorCodes(): void
     {
         $cases = [
             BadRequestException::class => [400, 'wordpress.http.badrequest'],
@@ -66,7 +69,7 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertSame('wordpress.http.validation', $exception->errorCode());
     }
 
-    public function testValidationExceptionPreservesFullPayloadWhenProvided(): void
+    public function testValidationExceptionKeepsPayload(): void
     {
         $message = $this->faker->sentence();
         $parameterMessage = $this->faker->sentence();
@@ -171,7 +174,7 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertSame('(redacted)', $data['header'] ?? null);
     }
 
-    public function testToArrayRedactsAppPasswordShapedValues(): void
+    public function testToArrayRedactsAppPasswords(): void
     {
         $message = $this->faker->sentence();
         $exception = new WordPressApiException($message, 400, [
@@ -184,7 +187,7 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertSame('(redacted)', $data['value'] ?? null);
     }
 
-    public function testToArrayNeverReturnsSecretsBeyondDepthLimit(): void
+    public function testToArrayRedactsDeepSecrets(): void
     {
         $value = 'Basic leaked-credential';
         for ($depth = 0; $depth < 9; $depth++) {
@@ -202,7 +205,7 @@ final class WordPressApiExceptionTest extends TestCase
         self::assertSame('(depth limit)', $redacted);
     }
 
-    public function testToArrayRedactsAuthorizationSchemesCaseInsensitively(): void
+    public function testToArrayRedactsAuthSchemes(): void
     {
         $exception = new WordPressApiException($this->faker->sentence(), 401, [
             'data' => ['header' => 'bearer token-value'],
@@ -212,6 +215,196 @@ final class WordPressApiExceptionTest extends TestCase
         $data = $exception->toArray()['wordpress_data'] ?? [];
 
         self::assertSame('(redacted)', $data['header'] ?? null);
+    }
+
+    public function testToArrayAndLogRedactBearerMessage(): void
+    {
+        $credential = $this->faker->lexify(str_repeat('?', 48));
+        $exception = new WordPressApiException(
+            sprintf('%s Bearer %s', $this->faker->sentence(), $credential),
+        );
+        $arrayMessage = $exception->toArray()['message'];
+        $logMessage = $exception->toLogArray()['message'];
+
+        self::assertIsString($arrayMessage);
+        self::assertIsString($logMessage);
+        self::assertStringNotContainsString($credential, $arrayMessage);
+        self::assertStringNotContainsString($credential, $logMessage);
+        self::assertStringContainsString('Bearer (redacted)', $arrayMessage);
+        self::assertStringContainsString('Bearer (redacted)', $logMessage);
+    }
+
+    public function testStructuredOutputsRedactUrlSecrets(): void
+    {
+        $url = 'https://user:review-sentinel@example.test/?token=review-sentinel';
+        $message = sprintf('Request failed for %s', $url);
+        $exception = new WordPressApiException(
+            $message,
+            502,
+            [
+                'code' => $url,
+                'message' => sprintf('WordPress rejected %s', $url),
+                'data' => ['resource' => ['url' => $url]],
+            ],
+            context: new ExceptionContext([
+                'request' => ['url' => $url],
+                'description' => sprintf('Request target %s', $url),
+            ]),
+        );
+        $safeUrl = 'https://(redacted)@example.test/?token=(redacted)';
+        $structured = $exception->toArray();
+        $context = $exception->getContext();
+        $log = $exception->toLogArray();
+        $structuredMessage = $structured['message'] ?? null;
+        $wordpressCode = $structured['wordpress_code'] ?? null;
+        $response = $structured['response'] ?? null;
+        $wordpressData = $structured['wordpress_data'] ?? null;
+        $requestContext = $context['request'] ?? null;
+        $logContext = $log['context'] ?? null;
+
+        self::assertSame($message, $exception->getMessage());
+        self::assertIsString($structuredMessage);
+        self::assertIsString($wordpressCode);
+        self::assertIsArray($response);
+        self::assertIsArray($response['data'] ?? null);
+        self::assertIsArray($response['data']['resource'] ?? null);
+        self::assertIsArray($wordpressData);
+        self::assertIsArray($wordpressData['resource'] ?? null);
+        self::assertIsArray($requestContext);
+        self::assertIsArray($logContext);
+        self::assertIsArray($logContext['request'] ?? null);
+        self::assertIsString($context['description'] ?? null);
+        self::assertIsString($log['message'] ?? null);
+        self::assertIsString($logContext['description'] ?? null);
+        self::assertIsString($response['code'] ?? null);
+        self::assertIsString($response['data']['resource']['url'] ?? null);
+        self::assertIsString($wordpressData['resource']['url'] ?? null);
+        self::assertIsString($requestContext['url'] ?? null);
+        self::assertIsString($logContext['request']['url'] ?? null);
+        self::assertStringContainsString($safeUrl, $structuredMessage);
+        self::assertSame($safeUrl, $wordpressCode);
+        self::assertSame($safeUrl, $response['code']);
+        self::assertSame($safeUrl, $response['data']['resource']['url']);
+        self::assertSame($safeUrl, $wordpressData['resource']['url']);
+        self::assertSame($safeUrl, $requestContext['url']);
+        self::assertStringContainsString($safeUrl, $context['description']);
+        self::assertStringContainsString($safeUrl, $log['message']);
+        self::assertSame($safeUrl, $logContext['request']['url']);
+        self::assertStringContainsString($safeUrl, $logContext['description']);
+
+        self::assertStringNotContainsString('review-sentinel', $structuredMessage);
+        self::assertStringNotContainsString('review-sentinel', $response['data']['resource']['url']);
+        self::assertStringNotContainsString('review-sentinel', $context['description']);
+        self::assertStringNotContainsString('review-sentinel', $log['message']);
+    }
+
+    public function testDefaultContextRedactsUrlCredentials(): void
+    {
+        $url = 'https://user:review-sentinel@example.test/?token=review-sentinel';
+        $message = sprintf('%s %s', $this->faker->sentence(), $url);
+        $safeMessage = str_replace(
+            $url,
+            'https://(redacted)@example.test/?token=(redacted)',
+            $message,
+        );
+        $exception = new WordPressApiException($message, 502, [
+            'code' => $this->faker->slug(),
+            'message' => $message,
+            'data' => ['status' => 502],
+        ]);
+        $context = $exception->getContext();
+        $log = $exception->toLogArray();
+        $contextResponse = $context['response'] ?? null;
+        $logContext = $log['context'] ?? null;
+
+        self::assertSame($message, $exception->getMessage());
+        self::assertIsArray($contextResponse);
+        self::assertIsArray($logContext);
+        self::assertIsArray($logContext['response'] ?? null);
+        self::assertIsString($contextResponse['message'] ?? null);
+        self::assertIsString($logContext['response']['message'] ?? null);
+        self::assertSame($safeMessage, $contextResponse['message']);
+        self::assertSame($safeMessage, $logContext['response']['message']);
+        self::assertStringNotContainsString('review-sentinel', $contextResponse['message']);
+        self::assertStringNotContainsString('review-sentinel', $logContext['response']['message']);
+    }
+
+    public function testUrlRedactionHandlesQueryEdgeCases(): void
+    {
+        $semicolonAndFragmentUrl = 'https://example.test/?safe=1;token=review-sentinel#access_token=review-sentinel&keep=visible';
+        $encodedSensitiveKeyUrl = 'https://example.test/?safe=2&%61ccess_token=review-sentinel';
+        $prefix = $this->faker->sentence();
+        $message = sprintf('%s %s %s', $prefix, $semicolonAndFragmentUrl, $encodedSensitiveKeyUrl);
+        $safeMessage = sprintf(
+            '%s https://example.test/?safe=1;token=(redacted)#access_token=(redacted)&keep=visible https://example.test/?safe=2&%%61ccess_token=(redacted)',
+            $prefix,
+        );
+        $exception = new WordPressApiException($message);
+        $structuredMessage = $exception->toArray()['message'] ?? null;
+
+        self::assertSame($message, $exception->getMessage());
+        self::assertIsString($structuredMessage);
+        self::assertSame($safeMessage, $structuredMessage);
+        self::assertStringNotContainsString('review-sentinel', $structuredMessage);
+    }
+
+    public function testContextRedactsWpSecretsKeepsRedactor(): void
+    {
+        $previousRedactor = AbstractContextAwareException::getRedactor();
+        $applicationRedactor = new class implements ContextRedactorInterface {
+            /**
+             * @param array<array-key, mixed> $context
+             * @return array<string, mixed>
+             */
+            public function redact(array $context): array
+            {
+                $redacted = [];
+                foreach ($context as $key => $value) {
+                    if (is_string($key)) {
+                        $redacted[$key] = $value;
+                    }
+                }
+
+                $redacted['application_redactor'] = 'active';
+
+                return $redacted;
+            }
+        };
+        $secret = $this->faker->password(24);
+
+        AbstractContextAwareException::setRedactor($applicationRedactor);
+
+        try {
+            $exception = new WordPressApiException(
+                $this->faker->sentence(),
+                data: ['data' => ['wordpress_application_password' => $secret]],
+                context: new ExceptionContext([
+                    'application_password' => $secret,
+                    'wordpress_application_password' => $secret,
+                    'nested' => ['app_password' => $secret],
+                ]),
+            );
+            $context = $exception->getContext();
+            $nestedContext = $context['nested'] ?? [];
+            $responseData = $exception->toArray()['wordpress_data'] ?? [];
+            $logContext = $exception->toLogArray()['context'] ?? [];
+
+            self::assertIsArray($nestedContext);
+            self::assertIsArray($responseData);
+            self::assertIsArray($logContext);
+            self::assertSame($applicationRedactor, AbstractContextAwareException::getRedactor());
+            self::assertSame('active', $context['application_redactor'] ?? null);
+            self::assertSame('(redacted)', $context['application_password'] ?? null);
+            self::assertSame('(redacted)', $context['wordpress_application_password'] ?? null);
+            self::assertSame('(redacted)', $nestedContext['app_password'] ?? null);
+            self::assertSame(
+                '(redacted)',
+                $responseData['wordpress_application_password'] ?? null,
+            );
+            self::assertSame('(redacted)', $logContext['wordpress_application_password'] ?? null);
+        } finally {
+            AbstractContextAwareException::setRedactor($previousRedactor);
+        }
     }
 
     public function testToArrayWithoutPayload(): void

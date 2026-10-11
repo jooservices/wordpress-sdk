@@ -24,7 +24,7 @@ final class AutosavesServiceTest extends TestCase
         }
     }
 
-    public function testListsGetsCreatesAndValidatesResources(): void
+    public function testAutosaveResourceOperations(): void
     {
         $resource = $this->wordPress()->autosaves()->resource('posts', 7);
         foreach ([

@@ -21,7 +21,7 @@ final class TermsServiceTest extends TestCase
         $this->wordPress = $this->wordPress();
     }
 
-    public function testDeleteDefaultsToForceAndSendsForceTrue(): void
+    public function testDeleteDefaultsToForce(): void
     {
         $name = $this->faker->word();
         $sequence = new TestResponseSequence();

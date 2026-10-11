@@ -19,6 +19,14 @@ abstract class AbstractBlock implements BlockInterface
     public function render(): string
     {
         $name = $this->getName();
+
+        if (
+            preg_match('/\\A[a-z][a-z0-9-]*(?:\/[a-z][a-z0-9-]*)?\\z/', $name) !== 1
+            || str_starts_with($name, 'core/')
+        ) {
+            throw new InvalidArgumentException('Block names must be a valid core name or namespace/name pair.');
+        }
+
         $content = $this->getContent();
         $json = $this->attributesJson();
 
@@ -58,7 +66,10 @@ abstract class AbstractBlock implements BlockInterface
         }
 
         try {
-            return ' ' . json_encode($attributes, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
+            return ' ' . json_encode(
+                $attributes,
+                JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+            );
         } catch (JsonException $exception) {
             throw new InvalidArgumentException('Block attributes must be valid JSON values.', 0, $exception);
         }

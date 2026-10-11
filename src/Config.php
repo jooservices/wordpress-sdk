@@ -60,10 +60,13 @@ final readonly class Config
         $parts = parse_url($baseUrl);
 
         if (! is_array($parts) || filter_var($baseUrl, FILTER_VALIDATE_URL) === false) {
-            throw new InvalidArgumentException(sprintf('Invalid base URL: %s', $baseUrl));
+            throw new InvalidArgumentException('Invalid base URL.');
         }
 
-        if (! in_array($parts['scheme'] ?? null, ['http', 'https'], true)
+        $scheme = $parts['scheme'] ?? null;
+
+        if (! is_string($scheme)
+            || ! in_array(strtolower($scheme), ['http', 'https'], true)
             || ! isset($parts['host'])
             || isset($parts['query'])
             || isset($parts['fragment'])
@@ -74,6 +77,7 @@ final readonly class Config
             );
         }
 
+        $baseUrl = strtolower($scheme) . substr($baseUrl, strlen($scheme));
         $baseUrl = rtrim($baseUrl, '/');
 
         if (! str_ends_with($baseUrl, '/wp-json')) {

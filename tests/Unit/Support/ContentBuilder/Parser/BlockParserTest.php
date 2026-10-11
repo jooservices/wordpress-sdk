@@ -82,7 +82,7 @@ final class BlockParserTest extends TestCase
         );
     }
 
-    public function testRegisteredOverrideTakesPrecedenceOverCoreParser(): void
+    public function testRegisteredOverrideWins(): void
     {
         $content = $this->faker->sentence();
         $attributes = ['anchor' => $this->faker->slug()];
@@ -137,14 +137,15 @@ final class BlockParserTest extends TestCase
     {
         $content = $this->faker->sentence();
         $citation = $this->faker->word();
-        $blocks = $this->parser->parse(
-            "<!-- wp:quote {\"citation\":\"{$citation}\"} -->\n<blockquote class=\"wp-block-quote\"><p>{$content}</p><cite>{$citation}</cite></blockquote>\n<!-- /wp:quote -->",
-            $this->registry,
-        );
+        $source = "<!-- wp:quote {\"citation\":\"{$citation}\"} -->\n"
+            . "<blockquote class=\"wp-block-quote\"><p>{$content}</p><cite>{$citation}</cite></blockquote>\n"
+            . '<!-- /wp:quote -->';
+        $blocks = $this->parser->parse($source, $this->registry);
 
         self::assertInstanceOf(Quote::class, $blocks[0]);
         self::assertSame($content, $blocks[0]->content);
         self::assertSame($citation, $blocks[0]->citation);
+        self::assertSame($source, $blocks[0]->render());
     }
 
     public function testParsesQuoteWithMultipleParagraphs(): void
@@ -159,6 +160,48 @@ final class BlockParserTest extends TestCase
 
         self::assertInstanceOf(Quote::class, $blocks[0]);
         self::assertSame("{$first}\n\n{$second}", $blocks[0]->content);
+        self::assertSame($source, $blocks[0]->render());
+    }
+
+    public function testQuoteParserPreservesInlineMarkup(): void
+    {
+        $content = $this->faker->word();
+        $source = "<!-- wp:quote -->\n"
+            . '<blockquote class="wp-block-quote"><p><strong>' . $content
+            . '</strong> &amp; text</p></blockquote>'
+            . "\n<!-- /wp:quote -->";
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertInstanceOf(Quote::class, $blocks[0]);
+        self::assertSame($source, $blocks[0]->render());
+    }
+
+    public function testRoundTripsInlineCitation(): void
+    {
+        $content = $this->faker->sentence();
+        $citation = $this->faker->word();
+        $citeMarkup = sprintf(
+            '<a href="%s"><strong>%s</strong> &amp; %s</a>',
+            $this->faker->url(),
+            $this->faker->word(),
+            $this->faker->word(),
+        );
+        $attributes = json_encode(
+            ['citation' => $citation],
+            JSON_HEX_TAG | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR,
+        );
+        $source = sprintf(
+            "<!-- wp:quote %s -->\n<blockquote class=\"wp-block-quote\"><p>%s</p><cite>%s</cite></blockquote>\n<!-- /wp:quote -->",
+            $attributes,
+            $content,
+            $citeMarkup,
+        );
+
+        $blocks = $this->parser->parse($source, $this->registry);
+
+        self::assertInstanceOf(Quote::class, $blocks[0]);
+        self::assertSame($citation, $blocks[0]->citation);
         self::assertSame($source, $blocks[0]->render());
     }
 
@@ -202,7 +245,7 @@ final class BlockParserTest extends TestCase
         self::assertInstanceOf(ReadMoreButton::class, $blocks[1]);
     }
 
-    public function testParsesCodeShortcodeHtmlAndPageBreakLeaves(): void
+    public function testParsesCodeShortcodeAndPageBreak(): void
     {
         $code = $this->faker->word();
         $shortcode = sprintf('[%s]', $this->faker->slug());
@@ -272,7 +315,7 @@ final class BlockParserTest extends TestCase
         self::assertInstanceOf(HtmlBlock::class, $blocks[0]->getInnerBlocks()[0]);
     }
 
-    public function testUnknownBlocksBecomeGenericBlockWithoutCorePrefix(): void
+    public function testUnknownBlocksBecomeGeneric(): void
     {
         $inner = $this->faker->word();
         $blocks = $this->parser->parse(
@@ -329,7 +372,7 @@ final class BlockParserTest extends TestCase
         );
     }
 
-    public function testRoundTripsNestedBlocksWithTheSameName(): void
+    public function testRoundTripsSameNameNestedBlocks(): void
     {
         $content = $this->faker->word();
         $source = "<!-- wp:group {\"tagName\":\"div\"} -->\n"

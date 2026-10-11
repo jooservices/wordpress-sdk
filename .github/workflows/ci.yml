@@ -104,7 +104,7 @@ jobs:
       - name: Check coverage threshold
         run: tools/ci/docker-compose run --rm php composer coverage:check
       - name: Upload coverage artifact
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage-Unit
           path: coverage.xml
@@ -186,7 +186,7 @@ jobs:
         run: |
           docker run --rm \
             --volume "${GITHUB_WORKSPACE}:/src:ro" \
-            semgrep/semgrep@sha256:67319956da3dcb58baf5b322899c15458e3963e7018a86aeeb5cd224e69cb77a \
+            semgrep/semgrep:1.179.0@sha256:93963d9295a366f59e4850127b1550400ee7b388f04fe144e4a1f6325d96e01b \
             semgrep scan --config p/php --error
 
   coverage:
@@ -203,13 +203,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - name: Download coverage artifacts
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
         with:
           name: coverage-Unit
           path: .
       - name: Upload to Codecov
         if: github.event.pull_request.user.type != 'Bot'
-        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: coverage.xml
@@ -234,7 +234,7 @@ jobs:
           echo "host_url=${host_url}" >> "${GITHUB_OUTPUT}"
       - name: Upload SonarQube analysis
         if: github.event.pull_request.user.type != 'Bot' && env.SONAR_TOKEN != ''
-        uses: SonarSource/sonarqube-scan-action@22918119ff8e1ca75a623e15c8296b6ea4fbe28f # v8
+        uses: SonarSource/sonarqube-scan-action@d209202bc7d53ff1cc128f7f907dac145c9d6ae9 # v8.3.0
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ steps.sonar-config.outputs.host_url }}

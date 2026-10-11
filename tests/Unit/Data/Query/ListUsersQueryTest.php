@@ -17,7 +17,7 @@ final class ListUsersQueryTest extends TestCase
         );
     }
 
-    public function testOffsetPreservesLegacyPositionalArguments(): void
+    public function testOffsetKeepsLegacyArguments(): void
     {
         $search = $this->faker->word();
         $query = new ListUsersQuery(

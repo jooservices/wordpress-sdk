@@ -69,7 +69,7 @@ final class EndpointTest extends TestCase
         self::assertSame('wp/v2/sidebars', Endpoint::SIDEBARS->path());
     }
 
-    public function testWithChildBuildsNestedSubresourcePaths(): void
+    public function testChildBuildsNestedResourcePaths(): void
     {
         self::assertSame('wp/v2/posts/9/revisions', Endpoint::POSTS->withChild(9, 'revisions'));
         self::assertSame(

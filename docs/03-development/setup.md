@@ -15,8 +15,10 @@ make test        # phpunit Unit suite
 make test-coverage
 make audit       # composer audit
 make clean-consumer
-make integration # disposable WordPress 7.1 + MariaDB + WP-CLI
-make hooks-install # optional local hooks; never automatic on install
+make integration # disposable WordPress 7.1.3 + MariaDB + WP-CLI
+make integration-review-sample # retain a local ContentBuilder sample post for review
+make integration-review-cleanup # remove the retained review stack and volumes
+make hooks-install # install Git hooks through the Docker PHP wrapper
 make ci          # lint + test:coverage (coverage gate) + audit
 ```
 
@@ -48,7 +50,9 @@ Fake patterns match by path with `fnmatch` (query matching is order-independent)
   gate's `EXCLUSIONS` (currently none).
 - `composer audit` on every CI run.
 - Clean-consumer install against published `client`/`dto` releases.
-- Live WordPress 7.1 route discovery and authenticated WP-CLI E2E.
+- Live WordPress 7.1.3 route discovery and authenticated WP-CLI E2E.
+- Review mode publishes a dedicated ContentBuilder sample post on localhost and
+  keeps its Docker stack until `make integration-review-cleanup` runs.
 
 ## Releasing
 

@@ -3,7 +3,7 @@
 ## Requirements
 
 - PHP `^8.5`
-- `jooservices/client ^4.2` (PSR-18 client — installed automatically)
+- `jooservices/client ^4.5` (PSR-18 client — installed automatically)
 - `jooservices/dto ^3.2` (hydration engine — installed automatically)
 
 ## Install

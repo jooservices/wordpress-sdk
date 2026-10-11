@@ -9,6 +9,7 @@ use JOOservices\Client\Request\MultipartPart;
 use JOOservices\WordPress\Sdk\Contracts\Writable\PayloadInterface;
 use JOOservices\WordPress\Sdk\Data\Media;
 use JOOservices\WordPress\Sdk\Endpoints\Endpoint;
+use Override;
 
 /**
  * @extends AbstractCrudService<Media>
@@ -20,7 +21,7 @@ final class MediaService extends AbstractCrudService
      *
      * @param array<string, mixed>|PayloadInterface $payload
      */
-    #[\Override]
+    #[Override]
     public function create(array|PayloadInterface $payload): object
     {
         unset($payload);

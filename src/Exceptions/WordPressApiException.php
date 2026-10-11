@@ -8,7 +8,6 @@ use JOOservices\Exceptions\Base\AbstractJOORuntimeException;
 use JOOservices\Exceptions\Concerns\HasExceptionContext;
 use JOOservices\Exceptions\Contracts\ContextAwareExceptionInterface;
 use JOOservices\Exceptions\Contracts\LoggableExceptionInterface;
-use JOOservices\Exceptions\Support\CompositeContextRedactor;
 use JOOservices\Exceptions\Support\ExceptionContext;
 use Throwable;
 
@@ -27,9 +26,10 @@ class WordPressApiException extends AbstractJOORuntimeException implements
     ContextAwareExceptionInterface,
     LoggableExceptionInterface
 {
-    use HasExceptionContext;
-
-    private static bool $redactorConfigured = false;
+    use HasExceptionContext {
+        getContext as private getSharedContext;
+        toLogArray as private buildLogPayload;
+    }
 
     /**
      * @param array<string, mixed>|null $data raw WordPress error payload
@@ -41,7 +41,6 @@ class WordPressApiException extends AbstractJOORuntimeException implements
         ?Throwable $previous = null,
         ?ExceptionContext $context = null,
     ) {
-        self::configureRedactor();
         parent::__construct($message, $code, $previous);
         $this->initContext(
             $context !== null
@@ -56,6 +55,34 @@ class WordPressApiException extends AbstractJOORuntimeException implements
     }
 
     /**
+     * WordPress-specific secret fields are redacted after the application
+     * redactor, without changing the process-wide redactor configuration.
+     *
+     * @return array<string, mixed>
+     */
+    public function getContext(): array
+    {
+        /** @var array<string, mixed> $context */
+        $context = $this->getSharedContext();
+
+        /** @var array<string, mixed> $sanitized */
+        $sanitized = self::sanitize($context);
+
+        return $sanitized;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function toLogArray(): array
+    {
+        $payload = $this->buildLogPayload();
+        $payload['message'] = self::sanitizeMessage($this->getMessage());
+
+        return $payload;
+    }
+
+    /**
      * Structured, sanitized diagnostic payload suitable for logging or
      * error responses. Credential-like values are redacted recursively.
      *
@@ -65,10 +92,10 @@ class WordPressApiException extends AbstractJOORuntimeException implements
     {
         return [
             'type' => static::class,
-            'message' => $this->getMessage(),
+            'message' => self::sanitizeMessage($this->getMessage()),
             'status_code' => $this->code !== 0 ? $this->code : null,
             'wordpress_code' => isset($this->data['code']) && is_string($this->data['code'])
-                ? $this->data['code']
+                ? self::sanitizeStructuredString($this->data['code'])
                 : null,
             'wordpress_data' => isset($this->data['data'])
                 ? self::sanitize($this->data['data'])
@@ -115,23 +142,6 @@ class WordPressApiException extends AbstractJOORuntimeException implements
         return $payload;
     }
 
-    private static function configureRedactor(): void
-    {
-        if (self::$redactorConfigured) {
-            return;
-        }
-
-        // Shared process redactor used by HasExceptionContext::getContext().
-        \JOOservices\Exceptions\Base\AbstractContextAwareException::setRedactor(
-            CompositeContextRedactor::withExtraKeys([
-                'application_password',
-                'app_password',
-                'wordpress_application_password',
-            ]),
-        );
-        self::$redactorConfigured = true;
-    }
-
     /**
      * @param mixed $value
      *
@@ -157,11 +167,48 @@ class WordPressApiException extends AbstractJOORuntimeException implements
             return $result;
         }
 
-        if (is_string($value) && self::looksSensitiveValue($value)) {
-            return '(redacted)';
+        if (is_string($value)) {
+            return self::sanitizeStructuredString($value);
         }
 
         return $value;
+    }
+
+    private static function sanitizeMessage(string $message): string
+    {
+        $sanitized = preg_replace('/\b(Basic|Bearer)\s+\S+/i', '$1 (redacted)', $message) ?? $message;
+
+        return self::sanitizeUrlCredentials($sanitized);
+    }
+
+    private static function sanitizeStructuredString(string $value): string
+    {
+        if (self::looksSensitiveValue($value)) {
+            return '(redacted)';
+        }
+
+        return self::sanitizeUrlCredentials($value);
+    }
+
+    private static function sanitizeUrlCredentials(string $value): string
+    {
+        $withoutUserInfo = preg_replace(
+            '~\b([a-z][a-z0-9+.-]*://)[^/\s?#]*@~i',
+            '$1(redacted)@',
+            $value,
+        ) ?? $value;
+
+        return preg_replace_callback(
+            '/([?&#;])([^=?&#;\s]+)=([^?&#;\s]*)/',
+            static function (array $matches): string {
+                if (! self::looksSensitiveKey(rawurldecode($matches[2]))) {
+                    return $matches[0];
+                }
+
+                return $matches[1] . $matches[2] . '=(redacted)';
+            },
+            $withoutUserInfo,
+        ) ?? $withoutUserInfo;
     }
 
     private static function looksSensitiveKey(string $key): bool
@@ -183,7 +230,7 @@ class WordPressApiException extends AbstractJOORuntimeException implements
             return true;
         }
 
-        return preg_match('/[A-Za-z0-9]{4}\s+[A-Za-z0-9]{4}\s+[A-Za-z0-9]{4}/', $value) === 1;
+        return preg_match('/\A(?:[A-Za-z0-9]{4}\s+){3,5}[A-Za-z0-9]{4}\z/', $value) === 1;
     }
 
     /**

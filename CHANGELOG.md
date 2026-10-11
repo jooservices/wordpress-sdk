@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- Require `jooservices/client ^4.5` and pin the live WordPress E2E image to 7.1.3.
+
+### Fixed
+
+- Add opt-in HTML escaping for Gutenberg quote content and citations while
+  preserving the existing raw HTML output by default.
+- Validate rendered block names, encode block attributes safely, escape
+  Read More labels, and reject executable schemes in Button links.
+- Sanitize WordPress API exception context and messages without replacing the
+  application's shared redactor; avoid echoing invalid base URLs in errors.
+- Keep review E2E sample links on the configured localhost port.
+
 ## [4.1.0] - 2026-09-07
 
 ### Added

@@ -32,7 +32,7 @@ final class SearchResultTest extends TestCase
         self::assertSame('post', $result->type);
     }
 
-    public function testCastsNumericStringIdentifierToInteger(): void
+    public function testCastsNumericIdToInteger(): void
     {
         $id = $this->faker->numberBetween(1);
         $result = SearchResult::from([

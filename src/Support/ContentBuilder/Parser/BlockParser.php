@@ -345,15 +345,18 @@ final class BlockParser
      */
     private function createQuote(array $attributes, string $inner): Quote
     {
-        $withoutCite = preg_replace('/<cite>.*?<\/cite>/is', '', $inner) ?? $inner;
+        preg_match('/<cite\b[^>]*>(.*?)<\/cite>/is', $inner, $citationMatches);
+        $withoutCite = preg_replace('/<cite\b[^>]*>.*?<\/cite>/is', '', $inner) ?? $inner;
         $body = $this->unwrapTag($withoutCite, 'blockquote');
         $body = preg_replace('#</p>\s*<p\b[^>]*>#i', "\n\n", $body) ?? $body;
         $body = $this->unwrapTag($body, 'p');
 
-        return new Quote(
+        return Quote::fromParsedMarkup(
             trim($body),
             $this->stringAttribute($attributes, 'citation'),
             $attributes,
+            $citationMatches[1] ?? null,
+            escapeHtml: false,
         );
     }
 

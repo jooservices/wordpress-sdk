@@ -24,7 +24,7 @@ Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 | --- | --- |
 | Status | **`v4.1.0` — current release** |
 | First public line | `v4.0.0` |
-| Runtime | PHP `^8.5`, `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
+| Runtime | PHP `^8.5`, `jooservices/client ^4.5`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0` |
 
 ## Features
 
@@ -37,7 +37,7 @@ Package: `jooservices/wordpress-sdk` · v4.1.0 (ground-up rebuild)
 ## Requirements
 
 - PHP `^8.5`
-- `jooservices/client ^4.2`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0`
+- `jooservices/client ^4.5`, `jooservices/dto ^3.2`, `jooservices/exceptions ^4.0`
 
 ## Installation
 
@@ -102,12 +102,23 @@ make lint-fix
 make test
 make test-coverage
 make integration
+make integration-review-sample
+make integration-review-cleanup
 make ci
 ```
 
-Unit tests use `jooservices/client` HTTP fakes (266 tests, 92.32% statements).
-`make integration` provisions disposable WordPress 7.1, MariaDB, and WP-CLI
-(3 live tests), then tears them down.
+Unit tests use `jooservices/client` HTTP fakes (341 tests, 93.89% statements).
+`make integration` provisions disposable WordPress 7.1.3, MariaDB, and WP-CLI
+(4 live tests), then tears them down. `make integration-review-sample` runs the
+same suite and keeps a dedicated ContentBuilder sample post available at
+`http://127.0.0.1:8080`. To preserve an existing review stack, choose another
+project name and port, for example:
+`WORDPRESS_REVIEW_PROJECT=wordpress-sdk-review-420 WORDPRESS_REVIEW_PORT=8081 make integration-review-sample`.
+Set `WORDPRESS_SDK_VENDOR_DIR` to an absolute vendor directory when the test
+run must use an isolated Composer install.
+Run `make integration-review-cleanup` for the default review stack after
+review. Remove an alternate stack with
+`docker compose --project-name <project> --file docker-compose.integration.yml --file docker-compose.integration-review.yml down --volumes`.
 
 ## Community
 

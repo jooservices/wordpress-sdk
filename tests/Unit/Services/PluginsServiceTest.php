@@ -10,7 +10,7 @@ use JOOservices\WordPress\Sdk\Tests\TestCase;
 
 final class PluginsServiceTest extends TestCase
 {
-    public function testSupportsCrudAndMultiSegmentPluginPaths(): void
+    public function testCrudUsesMultiSegmentPaths(): void
     {
         $list = new TestResponseSequence();
         $list->push(TestResponse::json(['plugins' => []]));

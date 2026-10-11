@@ -205,7 +205,7 @@ final class AbstractServiceTest extends TestCase
         self::assertSame([1, 2, 3], array_map(static fn(Post $post): int => $post->id, $posts));
     }
 
-    public function testEachStopsEarlyWhenCallbackReturnsFalse(): void
+    public function testEachStopsWhenCallbackIsFalse(): void
     {
         $this->respondPages(3, 2);
 

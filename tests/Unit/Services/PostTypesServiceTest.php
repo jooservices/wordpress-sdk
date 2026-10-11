@@ -23,7 +23,7 @@ final class PostTypesServiceTest extends TestCase
         self::assertSame($name, $postType->name);
     }
 
-    public function testListsAssociativePayloadAndStreamsItems(): void
+    public function testListAssociativePayloadItems(): void
     {
         $sequence = new TestResponseSequence();
         $sequence->push(TestResponse::make(200, [], json_encode([

@@ -46,7 +46,7 @@ final class ReadMore extends AbstractBlock
     protected function getContent(): string
     {
         return $this->customText !== ''
-            ? sprintf('<!--more %s-->', $this->customText)
+            ? sprintf('<!--more %s-->', htmlspecialchars($this->customText, ENT_NOQUOTES | ENT_SUBSTITUTE, 'UTF-8'))
             : '<!--more-->';
     }
 }
